@@ -35,8 +35,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.Slider
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -217,6 +222,35 @@ data class DividerToken(
     val color: ColorValue? = null,
     val margin: Margin? = null
 ) : Token {
+    override val minSupportedVersion: Int = 1
+}
+
+/**
+ * A token representing a slider component.
+ * 
+ * @param id Unique identifier for the token
+ * @param version Version of the token
+ * @param a11y Accessibility properties
+ * @param initialValue Initial value of the slider (between 0f and 1f)
+ * @param valueRange Range of values for the slider (default is 0f to 1f)
+ * @param steps Number of discrete steps (null for continuous slider)
+ * @param enabled Whether the slider is enabled
+ * @param margin Margin around the slider
+ * @param onChange Action to trigger when the slider value changes
+ */
+@Serializable
+data class SliderToken(
+    override val id: String,
+    override val version: Int,
+    override val a11y: A11y? = null,
+    val initialValue: Float = 0f,
+    val valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    val steps: Int? = null,
+    val enabled: Boolean = true,
+    val margin: Margin? = null,
+    val onChange: Action? = null
+) : Token, InteractiveToken {
+    override val onClick: Action? = null
     override val minSupportedVersion: Int = 1
 }
 
@@ -692,6 +726,31 @@ fun RenderToken(
                         }
                     }
                 }
+            )
+        }
+
+        is SliderToken -> {
+            // Use remember to maintain local state after initial render
+            var sliderValue by remember { mutableStateOf(token.initialValue) }
+
+            Slider(
+                value = sliderValue,
+                onValueChange = { newValue ->
+                    sliderValue = newValue
+                    // Trigger onChange action if provided
+                    token.onChange?.let { action ->
+                        // Add the current value to the action data
+                        val actionWithValue = Action(
+                            type = action.type,
+                            data = action.data + ("value" to newValue.toString())
+                        )
+                        handleAction(actionWithValue, bindings, onAction)
+                    }
+                },
+                valueRange = token.valueRange,
+                steps = token.steps ?: 0,
+                enabled = token.enabled,
+                modifier = Modifier.applyMargin(token.margin)
             )
         }
     }
@@ -1222,8 +1281,60 @@ val lazyListExample = LazyColumnToken(
     }
 )
 
+// Example of a slider with local state management
+val sliderExample = CardToken(
+    id = "slider_example",
+    version = 1,
+    padding = Padding(all = 16),
+    margin = Margin(all = 16),
+    background = Background(
+        color = ColorValue(255, 255, 255),
+        cornerRadius = 8
+    ),
+    children = listOf(
+        TextToken(
+            id = "slider_example.title",
+            version = 1,
+            text = TemplateString("{{sliderTitle}}"),
+            style = TextStyle.HeadlineSmall,
+            margin = Margin(bottom = 16)
+        ),
+        TextToken(
+            id = "slider_example.description",
+            version = 1,
+            text = TemplateString("{{sliderDescription}}"),
+            style = TextStyle.BodyMedium,
+            margin = Margin(bottom = 24)
+        ),
+        SliderToken(
+            id = "slider_example.slider",
+            version = 1,
+            initialValue = 0.5f,
+            valueRange = 0f..1f,
+            steps = 10,
+            margin = Margin(vertical = 8),
+            a11y = A11y(
+                role = Role.SLIDER,
+                label = TemplateString("Adjust value")
+            ),
+            onChange = Action(
+                type = ActionType.CUSTOM,
+                data = mapOf("action" to "slider_value_changed")
+            )
+        ),
+        TextToken(
+            id = "slider_example.note",
+            version = 1,
+            text = TemplateString("The slider maintains its state locally after the initial render."),
+            style = TextStyle.BodySmall,
+            color = ColorValue(100, 100, 100),
+            margin = Margin(top = 16)
+        )
+    )
+)
+
 // Register enhanced examples
-val enhancedExamples = listOf(enhancedCard, formExample, lazyListExample)
+val enhancedExamples = listOf(enhancedCard, formExample, lazyListExample, sliderExample)
 
 // Enhanced screen payload with registry initialization
 val enhancedScreen = ScreenPayload(
@@ -1235,6 +1346,13 @@ val enhancedScreen = ScreenPayload(
                 "title" to "Enhanced Card Example",
                 "description" to "This card demonstrates the new CardToken with styling and a button.",
                 "buttonText" to "Learn More"
+            )
+        ),
+        TokenRef(
+            id = sliderExample.id,
+            bind = mapOf(
+                "sliderTitle" to "Local State Management",
+                "sliderDescription" to "This slider demonstrates local state management. Move the slider and it will maintain its position even though the server doesn't know about the change."
             )
         ),
         TokenRef(

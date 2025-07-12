@@ -1,29 +1,3 @@
-This is a Kotlin Multiplatform project targeting Android, iOS, Web, Desktop, Server.
-
-* `/composeApp` is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - `commonMain` is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    `iosMain` would be the right folder for such calls.
-
-* `/iosApp` contains iOS applications. Even if you’re sharing your UI with Compose Multiplatform, 
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
-
-* `/server` is for the Ktor server application.
-
-* `/shared` is for the code that will be shared between all targets in the project.
-  The most important subfolder is `commonMain`. If preferred, you can add code to the platform-specific folders here too.
-
-
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html),
-[Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform/#compose-multiplatform),
-[Kotlin/Wasm](https://kotl.in/wasm/)…
-
-We would appreciate your feedback on Compose/Web and Kotlin/Wasm in the public Slack channel [#compose-web](https://slack-chats.kotlinlang.org/c/compose-web).
-If you face any issues, please report them on [YouTrack](https://youtrack.jetbrains.com/newIssue?project=CMP).
-
-You can open the web application by running the `:composeApp:wasmJsBrowserDevelopmentRun` Gradle task.
 # Server-Driven UI (SDUI) Framework
 
 This is a Kotlin Multiplatform project implementing a flexible and robust Server-Driven UI (SDUI) framework. The project targets Android, iOS, Web, Desktop, and includes a server component.
@@ -86,6 +60,73 @@ When modifying existing tokens:
 1. Increment the token's `version` property
 2. Update the `minSupportedVersion` if the change is breaking
 3. Add fallback behavior in the renderer for backward compatibility
+
+## Local State Management
+
+The SDUI framework supports local state management, allowing clients to maintain component state locally after the initial render. This is particularly useful for interactive components like sliders, toggles, and form inputs.
+
+### How It Works
+
+1. **Initial State from Server**: The server provides the initial state of the component
+2. **Local State Management**: The client maintains the state locally using Compose's `remember` and `mutableStateOf`
+3. **State Updates**: State changes are handled locally without requiring server communication
+4. **Optional Callbacks**: Changes can optionally be reported back to the server via actions
+
+### Example: Slider Component
+
+The `SliderToken` demonstrates this approach:
+
+```kotlin
+@Serializable
+data class SliderToken(
+    override val id: String,
+    override val version: Int,
+    override val a11y: A11y? = null,
+    val initialValue: Float = 0f,
+    val valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    val steps: Int? = null,
+    val enabled: Boolean = true,
+    val margin: Margin? = null,
+    val onChange: Action? = null
+) : Token, InteractiveToken
+```
+
+In the renderer, local state is maintained using Compose's state management:
+
+```kotlin
+@Composable
+fun RenderSliderToken(token: SliderToken, bindings: Map<String, Any>, onAction: ((Action, Map<String, Any>) -> Unit)?) {
+    // Use remember to maintain local state after initial render
+    var sliderValue by remember { mutableStateOf(token.initialValue) }
+
+    Slider(
+        value = sliderValue,
+        onValueChange = { newValue ->
+            sliderValue = newValue
+            // Optionally report changes back to the server
+            token.onChange?.let { action ->
+                val actionWithValue = Action(
+                    type = action.type,
+                    data = action.data + ("value" to newValue.toString())
+                )
+                handleAction(actionWithValue, bindings, onAction)
+            }
+        },
+        // Other properties...
+    )
+}
+```
+
+### Implementing Local State for Other Components
+
+To add local state management to a component:
+
+1. Define the initial state in the token properties
+2. Use `remember` and `mutableStateOf` in the renderer to maintain state locally
+3. Update the local state in response to user interactions
+4. Optionally report state changes back to the server via actions
+
+This approach allows for responsive UI interactions without requiring constant server communication.
 
 ## Best Practices for Evolution
 
