@@ -10,6 +10,8 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+    kotlin("plugin.serialization") version "2.2.0"
+
 }
 
 kotlin {
@@ -59,8 +61,14 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.ktor.client.android)
         }
+
+
         commonMain.dependencies {
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.ktor)
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
@@ -76,7 +84,9 @@ kotlin {
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
-            implementation(libs.kotlinx.coroutinesSwing)
+            implementation(libs.kotlinx.coroutines.swing)
+            implementation(libs.ktor.client.java)
+
         }
     }
 }
