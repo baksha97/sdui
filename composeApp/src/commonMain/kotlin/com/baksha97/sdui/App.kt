@@ -1,7 +1,6 @@
 package com.baksha97.sdui
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Column
@@ -17,13 +16,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import coil3.compose.AsyncImage
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
-import sdui.composeapp.generated.resources.Res
-import sdui.composeapp.generated.resources.compose_multiplatform
+// Import improved DSL examples
+import com.baksha97.sdui.improvedHomeScreenDSL
+import com.baksha97.sdui.improvedEnhancedScreenDSL
+import com.baksha97.sdui.improvedRegistryDSL
 
+/**
+ * Main App function that uses the improved DSL with auto-generated IDs and type-safe prebuilt components.
+ */
 @Composable
 fun App() {
     MaterialTheme {
@@ -67,16 +69,16 @@ fun App() {
                 }
             }
 
-            // SDUI Content
+            // SDUI Content using improved DSL examples
             if (showEnhancedUI) {
                 // Create a custom registry with action handling
                 val registry = remember {
-                    enhancedRegistry
+                    improvedRegistryDSL
                 }
 
                 // Render the enhanced screen with the custom registry
                 RenderScreen(
-                    screen = enhancedScreen,
+                    screen = improvedEnhancedScreenDSL,
                     registry = registry,
                     onMissingToken = { tokenId ->
                         println("Missing token: $tokenId")
@@ -85,7 +87,7 @@ fun App() {
                 )
             } else {
                 // Render the original screen
-                RenderScreen(homeScreen)
+                RenderScreen(improvedHomeScreenDSL, improvedRegistryDSL)
             }
         }
     }
@@ -96,3 +98,4 @@ fun App() {
 private fun AppPreview() {
     App()
 }
+

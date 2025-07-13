@@ -55,6 +55,9 @@ import kotlinx.serialization.Serializable
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.jvm.JvmInline
 import androidx.compose.ui.layout.ContentScale as ComposeContentScale
+import com.baksha97.sdui.improvedHomeScreenDSL
+import com.baksha97.sdui.improvedEnhancedScreenDSL
+import com.baksha97.sdui.improvedRegistryDSL
 
 /* ───────── Core token hierarchy ───────── */
 
@@ -423,6 +426,14 @@ fun RenderToken(
     }
 
     when (token) {
+        is CompositeToken -> {
+            // Render each token in the composite
+            Column(modifier = Modifier.fillMaxWidth()) {
+                token.tokens.forEach { childToken ->
+                    RenderToken(childToken, bindings, onAction)
+                }
+            }
+        }
         is ColumnToken -> {
             Column(
                 modifier = Modifier
@@ -1113,7 +1124,7 @@ val enhancedCard = CardToken(
     elevation = 2,
     shape = CardShape.ROUNDED8,
     background = Background(
-        color = ColorValue(240, 240, 250)
+        color = ColorValue(240, 240, 100)
     ),
     children = listOf(
         TextToken(
@@ -1154,7 +1165,7 @@ val formExample = BoxToken(
     padding = Padding(all = 16),
     background = Background(
         color = ColorValue(250, 250, 250),
-        borderColor = ColorValue(200, 200, 200),
+        borderColor = ColorValue(200, 200, 100),
         borderWidth = 1,
         cornerRadius = 8
     ),
@@ -1241,7 +1252,7 @@ val lazyListExample = LazyColumnToken(
             ),
             background = Background(
                 color = ColorValue(255, 255, 255),
-                borderColor = ColorValue(230, 230, 230),
+                borderColor = ColorValue(230, 230, 255),
                 borderWidth = 1,
                 cornerRadius = 4
             ),
@@ -1364,7 +1375,7 @@ val enhancedScreen = ScreenPayload(
         ),
         TokenRef(
             id = lazyListExample.id,
-            bind = emptyMap<String, Any>()
+            bind = emptyMap()
         )
     )
 )
@@ -1380,11 +1391,11 @@ val enhancedRegistry = TokenRegistry().apply {
 @Preview
 @Composable
 fun HomeScreenPreview() {
-    MaterialTheme { Surface { RenderScreen(homeScreen) } }
+    MaterialTheme { Surface { RenderScreen(improvedHomeScreenDSL, improvedRegistryDSL) } }
 }
 
 @Preview
 @Composable
 fun EnhancedScreenPreview() {
-    MaterialTheme { Surface { RenderScreen(enhancedScreen, enhancedRegistry) } }
+    MaterialTheme { Surface { RenderScreen(improvedEnhancedScreenDSL, improvedRegistryDSL) } }
 }
