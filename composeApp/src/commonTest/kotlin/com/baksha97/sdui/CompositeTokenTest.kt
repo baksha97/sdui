@@ -79,8 +79,7 @@ class CompositeTokenTest {
         
         // Test with list
         val composed3 = token1.with(listOf(token2, token3))
-        
-        assertTrue(composed3 is CompositeToken)
+
         assertEquals(3, composed3.tokens.size)
         assertEquals(token1, composed3.tokens[0])
         assertEquals(token2, composed3.tokens[1])

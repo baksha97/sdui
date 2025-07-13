@@ -86,7 +86,51 @@ object TokenSerializer : KSerializer<Token> {
     }
 
     override fun deserialize(decoder: Decoder): Token {
-        throw NotImplementedError("Deserialization is not implemented for Token")
+        require(decoder is JsonDecoder) { "This serializer can only be used with JSON" }
+
+        val jsonElement = decoder.decodeJsonElement()
+        require(jsonElement is JsonObject) { "Expected JsonObject for Token deserialization" }
+
+        // Determine token type from the JSON structure
+        val tokenType = when {
+            jsonElement.containsKey("children") -> {
+                when {
+                    jsonElement.containsKey("alignment") && 
+                    jsonElement["alignment"]?.jsonPrimitive?.contentOrNull?.contains("Horizontal") == true -> "ColumnToken"
+                    jsonElement.containsKey("alignment") && 
+                    jsonElement["alignment"]?.jsonPrimitive?.contentOrNull?.contains("Vertical") == true -> "RowToken"
+                    jsonElement.containsKey("contentAlignment") -> "BoxToken"
+                    jsonElement.containsKey("elevation") -> "CardToken"
+                    jsonElement.containsKey("reverseLayout") -> {
+                        if (jsonElement.containsKey("horizontalAlignment")) "LazyColumnToken" else "LazyRowToken"
+                    }
+                    else -> "ColumnToken" // Default container type
+                }
+            }
+            jsonElement.containsKey("text") && jsonElement.containsKey("onClick") -> "ButtonToken"
+            jsonElement.containsKey("text") -> "TextToken"
+            jsonElement.containsKey("height") && !jsonElement.containsKey("width") -> "SpacerToken"
+            jsonElement.containsKey("thickness") -> "DividerToken"
+            jsonElement.containsKey("initialValue") -> "SliderToken"
+            jsonElement.containsKey("url") -> "AsyncImageToken"
+            else -> throw SerializationException("Unable to determine token type from JSON: $jsonElement")
+        }
+
+        return when (tokenType) {
+            "ColumnToken" -> tokenJson.decodeFromJsonElement(ColumnToken.serializer(), jsonElement)
+            "RowToken" -> tokenJson.decodeFromJsonElement(RowToken.serializer(), jsonElement)
+            "BoxToken" -> tokenJson.decodeFromJsonElement(BoxToken.serializer(), jsonElement)
+            "CardToken" -> tokenJson.decodeFromJsonElement(CardToken.serializer(), jsonElement)
+            "TextToken" -> tokenJson.decodeFromJsonElement(TextToken.serializer(), jsonElement)
+            "ButtonToken" -> tokenJson.decodeFromJsonElement(ButtonToken.serializer(), jsonElement)
+            "SpacerToken" -> tokenJson.decodeFromJsonElement(SpacerToken.serializer(), jsonElement)
+            "DividerToken" -> tokenJson.decodeFromJsonElement(DividerToken.serializer(), jsonElement)
+            "SliderToken" -> tokenJson.decodeFromJsonElement(SliderToken.serializer(), jsonElement)
+            "AsyncImageToken" -> tokenJson.decodeFromJsonElement(AsyncImageToken.serializer(), jsonElement)
+            "LazyColumnToken" -> tokenJson.decodeFromJsonElement(LazyColumnToken.serializer(), jsonElement)
+            "LazyRowToken" -> tokenJson.decodeFromJsonElement(LazyRowToken.serializer(), jsonElement)
+            else -> throw SerializationException("Unknown token type: $tokenType")
+        }
     }
 }
 
@@ -114,7 +158,34 @@ object ContainerTokenSerializer : KSerializer<ContainerToken> {
     }
 
     override fun deserialize(decoder: Decoder): ContainerToken {
-        throw NotImplementedError("Deserialization is not implemented for ContainerToken")
+        require(decoder is JsonDecoder) { "This serializer can only be used with JSON" }
+
+        val jsonElement = decoder.decodeJsonElement()
+        require(jsonElement is JsonObject) { "Expected JsonObject for ContainerToken deserialization" }
+
+        // Determine container token type from the JSON structure
+        val tokenType = when {
+            jsonElement.containsKey("alignment") && 
+            jsonElement["alignment"]?.jsonPrimitive?.contentOrNull?.contains("Horizontal") == true -> "ColumnToken"
+            jsonElement.containsKey("alignment") && 
+            jsonElement["alignment"]?.jsonPrimitive?.contentOrNull?.contains("Vertical") == true -> "RowToken"
+            jsonElement.containsKey("contentAlignment") -> "BoxToken"
+            jsonElement.containsKey("elevation") -> "CardToken"
+            jsonElement.containsKey("reverseLayout") -> {
+                if (jsonElement.containsKey("horizontalAlignment")) "LazyColumnToken" else "LazyRowToken"
+            }
+            else -> "ColumnToken" // Default container type
+        }
+
+        return when (tokenType) {
+            "ColumnToken" -> tokenJson.decodeFromJsonElement(ColumnToken.serializer(), jsonElement)
+            "RowToken" -> tokenJson.decodeFromJsonElement(RowToken.serializer(), jsonElement)
+            "BoxToken" -> tokenJson.decodeFromJsonElement(BoxToken.serializer(), jsonElement)
+            "CardToken" -> tokenJson.decodeFromJsonElement(CardToken.serializer(), jsonElement)
+            "LazyColumnToken" -> tokenJson.decodeFromJsonElement(LazyColumnToken.serializer(), jsonElement)
+            "LazyRowToken" -> tokenJson.decodeFromJsonElement(LazyRowToken.serializer(), jsonElement)
+            else -> throw SerializationException("Unknown container token type: $tokenType")
+        }
     }
 }
 
@@ -140,6 +211,26 @@ object InteractiveTokenSerializer : KSerializer<InteractiveToken> {
     }
 
     override fun deserialize(decoder: Decoder): InteractiveToken {
-        throw NotImplementedError("Deserialization is not implemented for InteractiveToken")
+        require(decoder is JsonDecoder) { "This serializer can only be used with JSON" }
+
+        val jsonElement = decoder.decodeJsonElement()
+        require(jsonElement is JsonObject) { "Expected JsonObject for InteractiveToken deserialization" }
+
+        // Determine interactive token type from the JSON structure
+        val tokenType = when {
+            jsonElement.containsKey("text") && jsonElement.containsKey("onClick") -> "ButtonToken"
+            jsonElement.containsKey("elevation") && jsonElement.containsKey("onClick") -> "CardToken"
+            jsonElement.containsKey("initialValue") -> "SliderToken"
+            jsonElement.containsKey("url") && jsonElement.containsKey("onClick") -> "AsyncImageToken"
+            else -> throw SerializationException("Unable to determine interactive token type from JSON: $jsonElement")
+        }
+
+        return when (tokenType) {
+            "ButtonToken" -> tokenJson.decodeFromJsonElement(ButtonToken.serializer(), jsonElement)
+            "CardToken" -> tokenJson.decodeFromJsonElement(CardToken.serializer(), jsonElement)
+            "SliderToken" -> tokenJson.decodeFromJsonElement(SliderToken.serializer(), jsonElement)
+            "AsyncImageToken" -> tokenJson.decodeFromJsonElement(AsyncImageToken.serializer(), jsonElement)
+            else -> throw SerializationException("Unknown interactive token type: $tokenType")
+        }
     }
 }

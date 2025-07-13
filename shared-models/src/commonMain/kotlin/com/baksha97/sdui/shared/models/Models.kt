@@ -709,4 +709,143 @@ class TokenRegistry {
     fun clear() {
         tokens.clear()
     }
+
+    /**
+     * Validate that all token references in a screen payload are registered
+     * @param screenPayload The screen payload to validate
+     * @return List of missing token IDs, empty if all tokens are registered
+     */
+    fun validateScreenPayload(screenPayload: ScreenPayload): List<String> {
+        val missingTokens = mutableListOf<String>()
+
+        fun validateTokenRefs(tokenRefs: List<TokenRef>) {
+            tokenRefs.forEach { tokenRef ->
+                if (!hasToken(tokenRef.id)) {
+                    missingTokens.add(tokenRef.id)
+                } else {
+                    // Recursively validate child tokens
+                    val token = getToken(tokenRef.id)
+                    when (token) {
+                        is ColumnToken -> validateTokenRefs(token.children.map { TokenRef(it.id) })
+                        is RowToken -> validateTokenRefs(token.children.map { TokenRef(it.id) })
+                        is BoxToken -> validateTokenRefs(token.children.map { TokenRef(it.id) })
+                        is CardToken -> validateTokenRefs(token.children.map { TokenRef(it.id) })
+                        is LazyColumnToken -> validateTokenRefs(token.children.map { TokenRef(it.id) })
+                        is LazyRowToken -> validateTokenRefs(token.children.map { TokenRef(it.id) })
+                        is TextToken, is ButtonToken, is SpacerToken, is DividerToken, is SliderToken, is AsyncImageToken -> {
+                            // These tokens don't have children, no further validation needed
+                        }
+                        null -> {
+                            // This shouldn't happen since we checked hasToken above, but handle gracefully
+                        }
+                    }
+                }
+            }
+        }
+
+        validateTokenRefs(screenPayload.tokens)
+        return missingTokens.distinct()
+    }
+
+    /**
+     * Validate that all tokens in the registry are properly formed
+     * @return List of validation errors, empty if all tokens are valid
+     */
+    fun validateRegistry(): List<String> {
+        val errors = mutableListOf<String>()
+
+        tokens.values.forEach { token ->
+            // Check for empty or invalid IDs
+            if (token.id.isBlank()) {
+                errors.add("Token has empty or blank ID")
+            }
+
+            // Check for duplicate IDs (shouldn't happen with map, but good to verify)
+            val duplicateCount = tokens.values.count { it.id == token.id }
+            if (duplicateCount > 1) {
+                errors.add("Duplicate token ID found: ${token.id}")
+            }
+
+            // Validate child token references exist
+            when (token) {
+                is ColumnToken -> {
+                    token.children.forEach { child ->
+                        if (!hasToken(child.id)) {
+                            errors.add("Token '${token.id}' references missing child token '${child.id}'")
+                        }
+                    }
+                }
+                is RowToken -> {
+                    token.children.forEach { child ->
+                        if (!hasToken(child.id)) {
+                            errors.add("Token '${token.id}' references missing child token '${child.id}'")
+                        }
+                    }
+                }
+                is BoxToken -> {
+                    token.children.forEach { child ->
+                        if (!hasToken(child.id)) {
+                            errors.add("Token '${token.id}' references missing child token '${child.id}'")
+                        }
+                    }
+                }
+                is CardToken -> {
+                    token.children.forEach { child ->
+                        if (!hasToken(child.id)) {
+                            errors.add("Token '${token.id}' references missing child token '${child.id}'")
+                        }
+                    }
+                }
+                is LazyColumnToken -> {
+                    token.children.forEach { child ->
+                        if (!hasToken(child.id)) {
+                            errors.add("Token '${token.id}' references missing child token '${child.id}'")
+                        }
+                    }
+                }
+                is LazyRowToken -> {
+                    token.children.forEach { child ->
+                        if (!hasToken(child.id)) {
+                            errors.add("Token '${token.id}' references missing child token '${child.id}'")
+                        }
+                    }
+                }
+                is TextToken, is ButtonToken, is SpacerToken, is DividerToken, is SliderToken, is AsyncImageToken -> {
+                    // These tokens don't have children, no validation needed
+                }
+            }
+        }
+
+        return errors
+    }
+
+    /**
+     * Register a token with validation
+     * @param token The token to register
+     * @throws IllegalArgumentException if token ID is invalid
+     */
+    fun registerWithValidation(token: Token) {
+        if (token.id.isBlank()) {
+            throw IllegalArgumentException("Token ID cannot be empty or blank")
+        }
+
+        if (hasToken(token.id)) {
+            println("Warning: Overwriting existing token with ID '${token.id}'")
+        }
+
+        register(token)
+    }
+
+    /**
+     * Get registration statistics
+     * @return Map containing registration statistics
+     */
+    fun getRegistrationStats(): Map<String, Any> {
+        val tokensByType = tokens.values.groupBy { it::class.simpleName }
+        return mapOf(
+            "totalTokens" to tokens.size,
+            "tokensByType" to tokensByType.mapValues { it.value.size },
+            "tokenIds" to tokens.keys.sorted()
+        )
+    }
 }

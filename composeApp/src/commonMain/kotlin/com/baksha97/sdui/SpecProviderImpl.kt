@@ -29,107 +29,176 @@ import com.baksha97.sdui.shared.models.LazyRowToken as SharedLazyRowToken
  */
 class LocalSpecProviderImpl : SpecProvider {
     internal val sharedRegistry = SharedTokenRegistry().apply {
+        // Register child tokens for enhanced_card first
+        val enhancedCardTitle = SharedTextToken(
+            id = "enhanced_card.title",
+            version = 1,
+            text = com.baksha97.sdui.shared.models.TemplateString("{{title}}")
+        )
+        val enhancedCardDescription = SharedTextToken(
+            id = "enhanced_card.description", 
+            version = 1,
+            text = com.baksha97.sdui.shared.models.TemplateString("{{description}}")
+        )
+        val enhancedCardButton = SharedButtonToken(
+            id = "enhanced_card.button",
+            version = 1,
+            text = com.baksha97.sdui.shared.models.TemplateString("{{buttonText}}"),
+            onClick = com.baksha97.sdui.shared.models.Action(
+                type = com.baksha97.sdui.shared.models.ActionType.Custom,
+                data = mapOf("target" to "enhanced_card")
+            )
+        )
+
+        // Register child tokens individually
+        register(enhancedCardTitle)
+        register(enhancedCardDescription)
+        register(enhancedCardButton)
+
         // Create enhanced_card token
         register(SharedCardToken(
             id = "enhanced_card",
             version = 1,
-            children = listOf(
-                SharedTextToken(
-                    id = "enhanced_card.title",
-                    version = 1,
-                    text = com.baksha97.sdui.shared.models.TemplateString("{{title}}")
-                ),
-                SharedTextToken(
-                    id = "enhanced_card.description", 
-                    version = 1,
-                    text = com.baksha97.sdui.shared.models.TemplateString("{{description}}")
-                ),
-                SharedButtonToken(
-                    id = "enhanced_card.button",
-                    version = 1,
-                    text = com.baksha97.sdui.shared.models.TemplateString("{{buttonText}}"),
-                    onClick = com.baksha97.sdui.shared.models.Action(
-                        type = com.baksha97.sdui.shared.models.ActionType.Custom,
-                        data = mapOf("target" to "enhanced_card")
-                    )
-                )
-            )
+            children = listOf(enhancedCardTitle, enhancedCardDescription, enhancedCardButton)
         ))
+
+        // Register child tokens for slider_example first
+        val sliderExampleTitle = SharedTextToken(
+            id = "slider_example.title",
+            version = 1,
+            text = com.baksha97.sdui.shared.models.TemplateString("{{sliderTitle}}")
+        )
+        val sliderExampleDescription = SharedTextToken(
+            id = "slider_example.description",
+            version = 1,
+            text = com.baksha97.sdui.shared.models.TemplateString("{{sliderDescription}}")
+        )
+        val sliderExampleSlider = SharedSliderToken(
+            id = "slider_example.slider",
+            version = 1,
+            initialValue = 0.5f,
+            valueRange = 0f..1f
+        )
+
+        // Register child tokens individually
+        register(sliderExampleTitle)
+        register(sliderExampleDescription)
+        register(sliderExampleSlider)
 
         // Create slider_example token
         register(SharedCardToken(
             id = "slider_example",
             version = 1,
-            children = listOf(
-                SharedTextToken(
-                    id = "slider_example.title",
-                    version = 1,
-                    text = com.baksha97.sdui.shared.models.TemplateString("{{sliderTitle}}")
-                ),
-                SharedTextToken(
-                    id = "slider_example.description",
-                    version = 1,
-                    text = com.baksha97.sdui.shared.models.TemplateString("{{sliderDescription}}")
-                ),
-                SharedSliderToken(
-                    id = "slider_example.slider",
-                    version = 1,
-                    initialValue = 0.5f,
-                    valueRange = 0f..1f
-                )
-            )
+            children = listOf(sliderExampleTitle, sliderExampleDescription, sliderExampleSlider)
         ))
+
+        // Register child tokens for form_example first (deepest level first)
+        val formExampleTitle = SharedTextToken(
+            id = "form_example.title",
+            version = 1,
+            text = com.baksha97.sdui.shared.models.TemplateString("{{formTitle}}")
+        )
+        val formExampleDescription = SharedTextToken(
+            id = "form_example.description",
+            version = 1,
+            text = com.baksha97.sdui.shared.models.TemplateString("{{formDescription}}")
+        )
+        val formExampleCancel = SharedButtonToken(
+            id = "form_example.cancel",
+            version = 1,
+            text = com.baksha97.sdui.shared.models.TemplateString("Cancel"),
+            onClick = com.baksha97.sdui.shared.models.Action(
+                type = com.baksha97.sdui.shared.models.ActionType.Custom,
+                data = mapOf("action" to "cancel")
+            )
+        )
+        val formExampleSubmit = SharedButtonToken(
+            id = "form_example.submit",
+            version = 1,
+            text = com.baksha97.sdui.shared.models.TemplateString("Submit"),
+            onClick = com.baksha97.sdui.shared.models.Action(
+                type = com.baksha97.sdui.shared.models.ActionType.Custom,
+                data = mapOf("action" to "submit")
+            )
+        )
+
+        // Register deepest level tokens first
+        register(formExampleTitle)
+        register(formExampleDescription)
+        register(formExampleCancel)
+        register(formExampleSubmit)
+
+        // Register intermediate level tokens
+        val formExampleButtons = SharedRowToken(
+            id = "form_example.buttons",
+            version = 1,
+            children = listOf(formExampleCancel, formExampleSubmit)
+        )
+        register(formExampleButtons)
+
+        val formExampleContent = SharedColumnToken(
+            id = "form_example.content",
+            version = 1,
+            children = listOf(formExampleTitle, formExampleDescription, formExampleButtons)
+        )
+        register(formExampleContent)
 
         // Create form_example token
         register(SharedBoxToken(
             id = "form_example",
             version = 1,
-            children = listOf(
-                SharedColumnToken(
-                    id = "form_example.content",
-                    version = 1,
-                    children = listOf(
-                        SharedTextToken(
-                            id = "form_example.title",
-                            version = 1,
-                            text = com.baksha97.sdui.shared.models.TemplateString("{{formTitle}}")
-                        ),
-                        SharedTextToken(
-                            id = "form_example.description",
-                            version = 1,
-                            text = com.baksha97.sdui.shared.models.TemplateString("{{formDescription}}")
-                        ),
-                        SharedRowToken(
-                            id = "form_example.buttons",
-                            version = 1,
-                            children = listOf(
-                                SharedButtonToken(
-                                    id = "form_example.cancel",
-                                    version = 1,
-                                    text = com.baksha97.sdui.shared.models.TemplateString("Cancel"),
-                                    onClick = com.baksha97.sdui.shared.models.Action(
-                                        type = com.baksha97.sdui.shared.models.ActionType.Custom,
-                                        data = mapOf("action" to "cancel")
-                                    )
-                                ),
-                                SharedButtonToken(
-                                    id = "form_example.submit",
-                                    version = 1,
-                                    text = com.baksha97.sdui.shared.models.TemplateString("Submit"),
-                                    onClick = com.baksha97.sdui.shared.models.Action(
-                                        type = com.baksha97.sdui.shared.models.ActionType.Custom,
-                                        data = mapOf("action" to "submit")
-                                    )
-                                )
-                            )
-                        )
-                    )
-                )
-            )
+            children = listOf(formExampleContent)
         ))
     }
 
-    private val screens = mapOf(
+    /**
+     * Validate that all components are properly registered
+     * This method is called automatically during initialization to guarantee component registration
+     */
+    private fun validateRegistration() {
+        // Validate the registry itself
+        val registryErrors = sharedRegistry.validateRegistry()
+        if (registryErrors.isNotEmpty()) {
+            val errorMessage = "Registry validation failed:\n${registryErrors.joinToString("\n")}"
+            throw IllegalStateException(errorMessage)
+        }
+
+        // Validate all screens
+        screens.values.forEach { screen ->
+            val missingTokens = sharedRegistry.validateScreenPayload(screen)
+            if (missingTokens.isNotEmpty()) {
+                val errorMessage = "Screen '${screen.id}' references missing tokens: ${missingTokens.joinToString(", ")}"
+                throw IllegalStateException(errorMessage)
+            }
+        }
+
+        // Log successful validation
+        val stats = sharedRegistry.getRegistrationStats()
+        println("Component registration validation successful:")
+        println("  Total tokens: ${stats["totalTokens"]}")
+        println("  Token types: ${stats["tokensByType"]}")
+        println("  Screens validated: ${screens.size}")
+    }
+
+    /**
+     * Get validation report for debugging purposes
+     * @return Map containing validation information
+     */
+    fun getValidationReport(): Map<String, Any> {
+        val registryErrors = sharedRegistry.validateRegistry()
+        val screenValidation = screens.mapValues { (_, screen) ->
+            sharedRegistry.validateScreenPayload(screen)
+        }
+
+        return mapOf(
+            "registryErrors" to registryErrors,
+            "screenValidation" to screenValidation,
+            "registrationStats" to sharedRegistry.getRegistrationStats(),
+            "isValid" to (registryErrors.isEmpty() && screenValidation.values.all { it.isEmpty() })
+        )
+    }
+
+    internal val screens = mapOf(
         "home" to SharedScreenPayload(
             id = "home",
             tokens = listOf(
@@ -172,6 +241,11 @@ class LocalSpecProviderImpl : SpecProvider {
         )
     )
 
+    // Initialize validation after all properties are created
+    init {
+        validateRegistration()
+    }
+
     override suspend fun getScreen(id: String): SharedScreenPayload? {
         return screens[id]
     }
@@ -183,22 +257,55 @@ class LocalSpecProviderImpl : SpecProvider {
 
 /**
  * Implementation of SpecProvider that provides specs from a server.
- * This is a mock implementation that would be replaced with actual server communication.
+ * This implementation simulates real server communication with network delays and error handling.
  */
 class ServerSpecProviderImpl : SpecProvider {
-    // In a real implementation, this would make network requests to fetch specs from a server
-    // For now, we'll just use the same specs as the local provider for demonstration purposes
     private val localProvider = LocalSpecProviderImpl()
 
+    // Simulate network configuration
+    private val networkDelayMs = 1000L // 1 second delay to simulate network
+    private val failureRate = 0.1 // 10% chance of network failure
+
     override suspend fun getScreen(id: String): SharedScreenPayload? {
-        // Simulate a network request
-        // In a real implementation, this would make an HTTP request to the server
-        return localProvider.getScreen(id)
+        // Simulate network delay
+        kotlinx.coroutines.delay(networkDelayMs)
+
+        // Simulate occasional network failures
+        if (kotlin.random.Random.nextDouble() < failureRate) {
+            throw RuntimeException("Network error: Failed to fetch screen from server")
+        }
+
+        // In a real implementation, this would make an HTTP request like:
+        // val response = httpClient.get("https://api.example.com/screens/$id")
+        // return response.body<SharedScreenPayload>()
+
+        // For now, return local data with server-like behavior
+        val screen = localProvider.getScreen(id)
+
+        // Add server-specific metadata
+        return screen?.copy(
+            tokens = screen.tokens.map { tokenRef ->
+                tokenRef.copy(
+                    bind = tokenRef.bind + ("serverTimestamp" to "server_${kotlin.random.Random.nextInt()}")
+                )
+            }
+        )
     }
 
     override suspend fun getRegistry(): SharedTokenRegistry {
-        // Simulate a network request
-        // In a real implementation, this would make an HTTP request to the server
+        // Simulate network delay
+        kotlinx.coroutines.delay(networkDelayMs)
+
+        // Simulate occasional network failures
+        if (kotlin.random.Random.nextDouble() < failureRate) {
+            throw RuntimeException("Network error: Failed to fetch registry from server")
+        }
+
+        // In a real implementation, this would make an HTTP request like:
+        // val response = httpClient.get("https://api.example.com/registry")
+        // return response.body<SharedTokenRegistry>()
+
+        // For now, return local registry with server-like behavior
         return localProvider.getRegistry()
     }
 }

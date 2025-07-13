@@ -55,9 +55,6 @@ import kotlinx.serialization.Serializable
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.jvm.JvmInline
 import androidx.compose.ui.layout.ContentScale as ComposeContentScale
-import com.baksha97.sdui.improvedHomeScreenDSL
-import com.baksha97.sdui.improvedEnhancedScreenDSL
-import com.baksha97.sdui.improvedRegistryDSL
 import com.baksha97.sdui.shared.models.ScreenPayload as SharedScreenPayload
 import com.baksha97.sdui.shared.models.TokenRegistry as SharedTokenRegistry
 import com.baksha97.sdui.shared.models.TokenRef as SharedTokenRef
@@ -1704,14 +1701,3 @@ val enhancedRegistry = TokenRegistry().apply {
 
 /* ───────── Preview ───────── */
 
-@Preview
-@Composable
-fun HomeScreenPreview() {
-    MaterialTheme { Surface { RenderScreen(improvedHomeScreenDSL, improvedRegistryDSL) } }
-}
-
-@Preview
-@Composable
-fun EnhancedScreenPreview() {
-    MaterialTheme { Surface { RenderScreen(improvedEnhancedScreenDSL, improvedRegistryDSL) } }
-}

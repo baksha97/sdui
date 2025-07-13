@@ -78,16 +78,6 @@ fun ClickSupport.onClick(init: ActionBuilder.() -> Unit) {
     onClick = ActionBuilder().apply(init).build()
 }
 
-// Legacy functions for backward compatibility (deprecated - use property assignment instead)
-@Deprecated("Use textContent = \"value\" instead for clarity", ReplaceWith("textContent = value"))
-fun TextSupport.text(value: String) {
-    text = TemplateString(value)
-}
-
-@Deprecated("Use urlSource = \"value\" instead for clarity", ReplaceWith("urlSource = value"))
-fun UrlSupport.url(value: String) {
-    url = TemplateString(value)
-}
 
 // Extension properties for convenient string assignment
 // Allows using textContent = "value" instead of text = TemplateString("value")
