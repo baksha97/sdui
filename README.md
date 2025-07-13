@@ -128,6 +128,48 @@ fun RenderSlider(token: SliderToken, bindings: Map<String, Any>, onAction: (Acti
 
 ---
 
+## Schema Documentation
+
+The SDUI system uses multiple schema layers for type safety and validation:
+
+- **[Complete Schema Documentation](SCHEMA_DOCUMENTATION.md)** - Comprehensive guide to all schemas
+- **Protocol Buffer Schema** (`schema/sdui.proto`) - Core token definitions
+- **Kotlin Data Models** (`shared-models/`) - Runtime type-safe classes with validation
+- **DSL Builder Schema** - Fluent API for programmatic UI construction
+- **JSON Schema** - Generated validation schemas (use `dsl-cli schema` command)
+- **Component Registration** - Annotation-based component management
+
+### Schema Validation
+
+The system provides multiple validation layers:
+
+```kotlin
+// Runtime validation
+val registry = TokenRegistry()
+val errors = registry.validateScreenPayload(screenPayload)
+if (errors.isNotEmpty()) {
+    // Handle validation errors
+}
+
+// Registration validation
+registry.registerWithValidation(token) // Throws on invalid tokens
+```
+
+### Schema Tools
+
+```bash
+# Generate JSON schema for external validation
+dsl-cli schema token-schema.json
+
+# Validate components
+dsl-cli validate component.json
+
+# Generate sample components
+dsl-cli generate profile-card output.json
+```
+
+---
+
 ## Project Layout
 
 | Path                                          | Purpose                                                 |

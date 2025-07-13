@@ -1,0 +1,375 @@
+syntax = "proto3";
+
+package com.baksha97.sdui.schema;
+
+option java_package = "com.baksha97.sdui.schema";
+option java_outer_classname = "SduiProto";
+
+// Base interfaces and common types
+message Token {
+  string id = 1;
+  int32 version = 2;
+  A11y a11y = 3;
+  
+  oneof token_type {
+    ColumnToken column = 10;
+    RowToken row = 11;
+    BoxToken box = 12;
+    LazyColumnToken lazy_column = 13;
+    LazyRowToken lazy_row = 14;
+    CardToken card = 15;
+    TextToken text = 16;
+    ButtonToken button = 17;
+    SpacerToken spacer = 18;
+    DividerToken divider = 19;
+    SliderToken slider = 20;
+    AsyncImageToken async_image = 21;
+  }
+}
+
+// Container tokens
+message ColumnToken {
+  string id = 1;
+  int32 version = 2;
+  A11y a11y = 3;
+  Padding padding = 4;
+  Margin margin = 5;
+  Background background = 6;
+  HorizontalAlignment alignment = 7;
+  repeated Token children = 8;
+}
+
+message RowToken {
+  string id = 1;
+  int32 version = 2;
+  A11y a11y = 3;
+  Padding padding = 4;
+  Margin margin = 5;
+  Background background = 6;
+  VerticalAlignment alignment = 7;
+  repeated Token children = 8;
+}
+
+message BoxToken {
+  string id = 1;
+  int32 version = 2;
+  A11y a11y = 3;
+  Padding padding = 4;
+  Margin margin = 5;
+  Background background = 6;
+  BoxAlignment content_alignment = 7;
+  repeated Token children = 8;
+}
+
+message LazyColumnToken {
+  string id = 1;
+  int32 version = 2;
+  A11y a11y = 3;
+  Padding padding = 4;
+  Margin margin = 5;
+  Background background = 6;
+  HorizontalAlignment alignment = 7;
+  repeated Token children = 8;
+}
+
+message LazyRowToken {
+  string id = 1;
+  int32 version = 2;
+  A11y a11y = 3;
+  Padding padding = 4;
+  Margin margin = 5;
+  Background background = 6;
+  VerticalAlignment alignment = 7;
+  repeated Token children = 8;
+}
+
+message CardToken {
+  string id = 1;
+  int32 version = 2;
+  A11y a11y = 3;
+  Padding padding = 4;
+  Margin margin = 5;
+  int32 elevation = 6;
+  CardShape shape = 7;
+  Background background = 8;
+  Action on_click = 9;
+  repeated Token children = 10;
+}
+
+// Leaf tokens
+message TextToken {
+  string id = 1;
+  int32 version = 2;
+  A11y a11y = 3;
+  TemplateString text = 4;
+  TextStyle style = 5;
+  ColorValue color = 6;
+  int32 max_lines = 7;
+  TextOverflowValue overflow = 8;
+  TextAlignValue text_align = 9;
+  Margin margin = 10;
+}
+
+message ButtonToken {
+  string id = 1;
+  int32 version = 2;
+  A11y a11y = 3;
+  TemplateString text = 4;
+  ButtonStyle style = 5;
+  bool enabled = 6;
+  Margin margin = 7;
+  Action on_click = 8;
+}
+
+message SpacerToken {
+  string id = 1;
+  int32 version = 2;
+  A11y a11y = 3;
+  int32 width = 4;
+  int32 height = 5;
+}
+
+message DividerToken {
+  string id = 1;
+  int32 version = 2;
+  A11y a11y = 3;
+  int32 thickness = 4;
+  ColorValue color = 5;
+  Margin margin = 6;
+}
+
+message SliderToken {
+  string id = 1;
+  int32 version = 2;
+  A11y a11y = 3;
+  float initial_value = 4;
+  FloatRange value_range = 5;
+  int32 steps = 6;
+  bool enabled = 7;
+  Margin margin = 8;
+  Action on_change = 9;
+}
+
+message AsyncImageToken {
+  string id = 1;
+  int32 version = 2;
+  A11y a11y = 3;
+  TemplateString url = 4;
+  int32 width_dp = 5;
+  int32 height_dp = 6;
+  float layout_weight = 7;
+  ClipShape clip = 8;
+  ContentScale content_scale = 9;
+  Margin margin = 10;
+  ErrorFallback error_fallback = 11;
+  LoadingPlaceholder loading_placeholder = 12;
+  Action on_click = 13;
+}
+
+// Supporting types
+message A11y {
+  Role role = 1;
+  TemplateString label = 2;
+  LiveRegion live_region = 3;
+  bool is_enabled = 4;
+  bool is_focusable = 5;
+}
+
+message Padding {
+  int32 all = 1;
+  int32 horizontal = 2;
+  int32 vertical = 3;
+  int32 start = 4;
+  int32 top = 5;
+  int32 end = 6;
+  int32 bottom = 7;
+}
+
+message Margin {
+  int32 all = 1;
+  int32 horizontal = 2;
+  int32 vertical = 3;
+  int32 start = 4;
+  int32 top = 5;
+  int32 end = 6;
+  int32 bottom = 7;
+}
+
+message Background {
+  ColorValue color = 1;
+  ColorValue border_color = 2;
+  int32 border_width = 3;
+  int32 corner_radius = 4;
+}
+
+message Action {
+  ActionType type = 1;
+  map<string, string> data = 2;
+}
+
+message ColorValue {
+  int32 red = 1;
+  int32 green = 2;
+  int32 blue = 3;
+  int32 alpha = 4;
+}
+
+message TemplateString {
+  string raw = 1;
+}
+
+message ErrorFallback {
+  TemplateString text = 1;
+  TemplateString icon_url = 2;
+}
+
+message LoadingPlaceholder {
+  bool show_progress_indicator = 1;
+  ColorValue background_color = 2;
+}
+
+message FloatRange {
+  float start = 1;
+  float end = 2;
+}
+
+message TokenRef {
+  string id = 1;
+  map<string, string> bind = 2;
+}
+
+message ScreenPayload {
+  string id = 1;
+  repeated TokenRef tokens = 2;
+}
+
+// Enums
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  BANNER = 1;
+  IMAGE = 2;
+  BUTTON = 3;
+  CHECKBOX = 4;
+  HEADER = 5;
+  LINK = 6;
+  SWITCH = 7;
+  TEXT_FIELD = 8;
+  SLIDER = 9;
+  PROGRESS_BAR = 10;
+  RADIO_BUTTON = 11;
+  NONE = 12;
+}
+
+enum LiveRegion {
+  LIVE_REGION_UNSPECIFIED = 0;
+  OFF = 1;
+  POLITE = 2;
+  ASSERTIVE = 3;
+}
+
+enum ActionType {
+  ACTION_TYPE_UNSPECIFIED = 0;
+  NAVIGATE = 1;
+  DEEP_LINK = 2;
+  OPEN_URL = 3;
+  CUSTOM = 4;
+}
+
+enum TextStyle {
+  TEXT_STYLE_UNSPECIFIED = 0;
+  DISPLAY_LARGE = 1;
+  DISPLAY_MEDIUM = 2;
+  DISPLAY_SMALL = 3;
+  HEADLINE_LARGE = 4;
+  HEADLINE_MEDIUM = 5;
+  HEADLINE_SMALL = 6;
+  TITLE_LARGE = 7;
+  TITLE_MEDIUM = 8;
+  TITLE_SMALL = 9;
+  BODY_LARGE = 10;
+  BODY_MEDIUM = 11;
+  BODY_SMALL = 12;
+  LABEL_LARGE = 13;
+  LABEL_MEDIUM = 14;
+  LABEL_SMALL = 15;
+}
+
+enum ContentScale {
+  CONTENT_SCALE_UNSPECIFIED = 0;
+  FILL_WIDTH = 1;
+  FILL_HEIGHT = 2;
+  CROP = 3;
+  INSIDE = 4;
+  FIT = 5;
+  FILL_BOUNDS = 6;
+}
+
+enum ClipShape {
+  CLIP_SHAPE_UNSPECIFIED = 0;
+  CIRCLE = 1;
+  ROUNDED4 = 2;
+  ROUNDED8 = 3;
+  ROUNDED12 = 4;
+  ROUNDED16 = 5;
+}
+
+enum CardShape {
+  CARD_SHAPE_UNSPECIFIED = 0;
+  CARD_ROUNDED4 = 1;
+  CARD_ROUNDED8 = 2;
+  CARD_ROUNDED12 = 3;
+  CARD_ROUNDED16 = 4;
+}
+
+enum ButtonStyle {
+  BUTTON_STYLE_UNSPECIFIED = 0;
+  FILLED = 1;
+  OUTLINED = 2;
+  TEXT = 3;
+  ELEVATED = 4;
+  FILLED_TONAL = 5;
+}
+
+enum HorizontalAlignment {
+  HORIZONTAL_ALIGNMENT_UNSPECIFIED = 0;
+  START = 1;
+  CENTER_HORIZONTALLY = 2;
+  END = 3;
+}
+
+enum VerticalAlignment {
+  VERTICAL_ALIGNMENT_UNSPECIFIED = 0;
+  TOP = 1;
+  CENTER_VERTICALLY = 2;
+  BOTTOM = 3;
+}
+
+enum BoxAlignment {
+  BOX_ALIGNMENT_UNSPECIFIED = 0;
+  TOP_START = 1;
+  TOP_CENTER = 2;
+  TOP_END = 3;
+  CENTER_START = 4;
+  CENTER = 5;
+  CENTER_END = 6;
+  BOTTOM_START = 7;
+  BOTTOM_CENTER = 8;
+  BOTTOM_END = 9;
+}
+
+enum TextAlignValue {
+  TEXT_ALIGN_UNSPECIFIED = 0;
+  TEXT_START = 1;
+  TEXT_CENTER = 2;
+  TEXT_END = 3;
+  JUSTIFY = 4;
+  LEFT = 5;
+  RIGHT = 6;
+}
+
+enum TextOverflowValue {
+  TEXT_OVERFLOW_UNSPECIFIED = 0;
+  CLIP = 1;
+  ELLIPSIS = 2;
+  VISIBLE = 3;
+}

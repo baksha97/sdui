@@ -22,6 +22,9 @@ tinytypes4k = "0.2.0"
 ksp = "1.9.20-1.0.14"
 
 kotlin-serialization="1.9.0"
+protobuf = "3.25.1"
+protobuf-kotlin = "3.25.1"
+wire = "4.9.3"
 
 [libraries]
 coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coilCompose" }
@@ -51,6 +54,10 @@ ktor-client-java = { group = "io.ktor", name = "ktor-client-java", version.ref =
 tinytypes4k = { module = "io.github.nefilim.tinytypes4k:tinytypes4k", version.ref = "tinytypes4k" }
 ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 ksp-gradle-plugin = { module = "com.google.devtools.ksp:symbol-processing-gradle-plugin", version.ref = "ksp" }
+protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobuf-kotlin" }
+protobuf-gradle-plugin = { module = "com.google.protobuf:protobuf-gradle-plugin", version = "0.9.4" }
+wire-runtime = { module = "com.squareup.wire:wire-runtime", version.ref = "wire" }
+wire-gradle-plugin = { module = "com.squareup.wire:wire-gradle-plugin", version.ref = "wire" }
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
@@ -61,3 +68,5 @@ kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+protobuf = { id = "com.google.protobuf", version = "0.9.4" }
+wire = { id = "com.squareup.wire", version.ref = "wire" }

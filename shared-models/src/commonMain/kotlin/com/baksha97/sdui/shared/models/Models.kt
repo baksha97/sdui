@@ -766,6 +766,9 @@ class TokenRegistry {
                 errors.add("Duplicate token ID found: ${token.id}")
             }
 
+            // Validate token-specific properties
+            errors.addAll(validateTokenProperties(token))
+
             // Validate child token references exist
             when (token) {
                 is ColumnToken -> {
@@ -813,6 +816,259 @@ class TokenRegistry {
                 is TextToken, is ButtonToken, is SpacerToken, is DividerToken, is SliderToken, is AsyncImageToken -> {
                     // These tokens don't have children, no validation needed
                 }
+            }
+        }
+
+        return errors
+    }
+
+    /**
+     * Validate token-specific properties for enhanced schema validation
+     * @param token The token to validate
+     * @return List of validation errors for the token's properties
+     */
+    private fun validateTokenProperties(token: Token): List<String> {
+        val errors = mutableListOf<String>()
+
+        // Validate version is positive
+        if (token.version <= 0) {
+            errors.add("Token '${token.id}' has invalid version: ${token.version}")
+        }
+
+        // Validate common properties
+        token.a11y?.let { a11y ->
+            errors.addAll(validateA11yProperties(token.id, a11y))
+        }
+
+        // Validate token-specific properties
+        when (token) {
+            is TextToken -> {
+                errors.addAll(validateTextTokenProperties(token))
+            }
+            is ButtonToken -> {
+                errors.addAll(validateButtonTokenProperties(token))
+            }
+            is AsyncImageToken -> {
+                errors.addAll(validateAsyncImageTokenProperties(token))
+            }
+            is SliderToken -> {
+                errors.addAll(validateSliderTokenProperties(token))
+            }
+            is SpacerToken -> {
+                errors.addAll(validateSpacerTokenProperties(token))
+            }
+            // Container tokens
+            is ColumnToken, is RowToken, is BoxToken, is CardToken, is LazyColumnToken, is LazyRowToken -> {
+                // Container-specific validation handled in child reference validation
+            }
+            is DividerToken -> {
+                errors.addAll(validateDividerTokenProperties(token))
+            }
+        }
+
+        return errors
+    }
+
+    /**
+     * Validate A11y properties
+     */
+    private fun validateA11yProperties(tokenId: String, a11y: A11y): List<String> {
+        val errors = mutableListOf<String>()
+
+        if (a11y.label.raw.isBlank()) {
+            errors.add("Token '$tokenId' has empty accessibility label")
+        }
+
+        return errors
+    }
+
+    /**
+     * Validate TextToken properties
+     */
+    private fun validateTextTokenProperties(token: TextToken): List<String> {
+        val errors = mutableListOf<String>()
+
+        if (token.text.raw.isBlank()) {
+            errors.add("TextToken '${token.id}' has empty text content")
+        }
+
+        token.color?.let { color ->
+            errors.addAll(validateColorValue(token.id, color))
+        }
+
+        token.maxLines?.let { maxLines ->
+            if (maxLines <= 0) {
+                errors.add("TextToken '${token.id}' has invalid maxLines: $maxLines")
+            }
+        }
+
+        return errors
+    }
+
+    /**
+     * Validate ButtonToken properties
+     */
+    private fun validateButtonTokenProperties(token: ButtonToken): List<String> {
+        val errors = mutableListOf<String>()
+
+        if (token.text.raw.isBlank()) {
+            errors.add("ButtonToken '${token.id}' has empty text content")
+        }
+
+        errors.addAll(validateActionProperties(token.id, token.onClick))
+
+        return errors
+    }
+
+    /**
+     * Validate AsyncImageToken properties
+     */
+    private fun validateAsyncImageTokenProperties(token: AsyncImageToken): List<String> {
+        val errors = mutableListOf<String>()
+
+        if (token.url.raw.isBlank()) {
+            errors.add("AsyncImageToken '${token.id}' has empty URL")
+        }
+
+        token.widthDp?.let { width ->
+            if (width <= 0) {
+                errors.add("AsyncImageToken '${token.id}' has invalid width: $width")
+            }
+        }
+
+        token.heightDp?.let { height ->
+            if (height <= 0) {
+                errors.add("AsyncImageToken '${token.id}' has invalid height: $height")
+            }
+        }
+
+        token.layoutWeight?.let { weight ->
+            if (weight < 0) {
+                errors.add("AsyncImageToken '${token.id}' has invalid layout weight: $weight")
+            }
+        }
+
+        token.onClick?.let { action ->
+            errors.addAll(validateActionProperties(token.id, action))
+        }
+
+        return errors
+    }
+
+    /**
+     * Validate SliderToken properties
+     */
+    private fun validateSliderTokenProperties(token: SliderToken): List<String> {
+        val errors = mutableListOf<String>()
+
+        if (token.initialValue < token.valueRange.start || token.initialValue > token.valueRange.endInclusive) {
+            errors.add("SliderToken '${token.id}' initial value ${token.initialValue} is outside range ${token.valueRange}")
+        }
+
+        if (token.valueRange.start >= token.valueRange.endInclusive) {
+            errors.add("SliderToken '${token.id}' has invalid value range: ${token.valueRange}")
+        }
+
+        token.steps?.let { steps ->
+            if (steps <= 0) {
+                errors.add("SliderToken '${token.id}' has invalid steps: $steps")
+            }
+        }
+
+        token.onChange?.let { action ->
+            errors.addAll(validateActionProperties(token.id, action))
+        }
+
+        return errors
+    }
+
+    /**
+     * Validate SpacerToken properties
+     */
+    private fun validateSpacerTokenProperties(token: SpacerToken): List<String> {
+        val errors = mutableListOf<String>()
+
+        token.width?.let { width ->
+            if (width < 0) {
+                errors.add("SpacerToken '${token.id}' has invalid width: $width")
+            }
+        }
+
+        token.height?.let { height ->
+            if (height < 0) {
+                errors.add("SpacerToken '${token.id}' has invalid height: $height")
+            }
+        }
+
+        return errors
+    }
+
+    /**
+     * Validate DividerToken properties
+     */
+    private fun validateDividerTokenProperties(token: DividerToken): List<String> {
+        val errors = mutableListOf<String>()
+
+        if (token.thickness <= 0) {
+            errors.add("DividerToken '${token.id}' has invalid thickness: ${token.thickness}")
+        }
+
+        token.color?.let { color ->
+            errors.addAll(validateColorValue(token.id, color))
+        }
+
+        return errors
+    }
+
+    /**
+     * Validate ColorValue properties
+     */
+    private fun validateColorValue(tokenId: String, color: ColorValue): List<String> {
+        val errors = mutableListOf<String>()
+
+        if (color.red < 0 || color.red > 255) {
+            errors.add("Token '$tokenId' has invalid red color value: ${color.red}")
+        }
+
+        if (color.green < 0 || color.green > 255) {
+            errors.add("Token '$tokenId' has invalid green color value: ${color.green}")
+        }
+
+        if (color.blue < 0 || color.blue > 255) {
+            errors.add("Token '$tokenId' has invalid blue color value: ${color.blue}")
+        }
+
+        if (color.alpha < 0 || color.alpha > 255) {
+            errors.add("Token '$tokenId' has invalid alpha color value: ${color.alpha}")
+        }
+
+        return errors
+    }
+
+    /**
+     * Validate Action properties
+     */
+    private fun validateActionProperties(tokenId: String, action: Action): List<String> {
+        val errors = mutableListOf<String>()
+
+        when (action.type) {
+            ActionType.Navigate -> {
+                if (!action.data.containsKey("target")) {
+                    errors.add("Token '$tokenId' Navigate action missing required 'target' data")
+                }
+            }
+            ActionType.DeepLink -> {
+                if (!action.data.containsKey("url")) {
+                    errors.add("Token '$tokenId' DeepLink action missing required 'url' data")
+                }
+            }
+            ActionType.OpenUrl -> {
+                if (!action.data.containsKey("url")) {
+                    errors.add("Token '$tokenId' OpenUrl action missing required 'url' data")
+                }
+            }
+            ActionType.Custom -> {
+                // Custom actions can have any data, no specific validation needed
             }
         }
 
