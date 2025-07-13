@@ -58,6 +58,10 @@ import androidx.compose.ui.layout.ContentScale as ComposeContentScale
 import com.baksha97.sdui.improvedHomeScreenDSL
 import com.baksha97.sdui.improvedEnhancedScreenDSL
 import com.baksha97.sdui.improvedRegistryDSL
+import com.baksha97.sdui.shared.models.ScreenPayload as SharedScreenPayload
+import com.baksha97.sdui.shared.models.TokenRegistry as SharedTokenRegistry
+import com.baksha97.sdui.shared.models.TokenRef as SharedTokenRef
+import com.baksha97.sdui.shared.models.Token as SharedToken
 
 /* ───────── Core token hierarchy ───────── */
 
@@ -1072,7 +1076,319 @@ class TokenRegistry {
 /* ───────── Screen renderer ───────── */
 
 /**
- * Renders a screen with tokens from the provided registry
+ * Renders a screen with tokens from the provided registry (shared-models version)
+ */
+@Composable
+fun RenderScreen(
+    screen: SharedScreenPayload,
+    registry: SharedTokenRegistry,
+    onMissingToken: ((String) -> Unit)? = null,
+    onAction: ((Action, Map<String, Any>) -> Unit)? = null
+) {
+    // Convert shared-models types to composeApp types for rendering
+    val appScreen = ScreenPayload(
+        id = screen.id,
+        tokens = screen.tokens.map { tokenRef ->
+            TokenRef(
+                id = tokenRef.id,
+                bind = tokenRef.bind.mapValues { it.value as Any }
+            )
+        }
+    )
+
+    val appRegistry = TokenRegistry().apply {
+        registry.getAllTokens().values.forEach { sharedToken ->
+            // Convert shared token to app token - this is a simplified conversion
+            // In a real implementation, you'd need proper conversion logic for each token type
+            when (sharedToken) {
+                is com.baksha97.sdui.shared.models.TextToken -> {
+                    register(TextToken(
+                        id = sharedToken.id,
+                        version = sharedToken.version,
+                        a11y = sharedToken.a11y?.let { a11y ->
+                            A11y(
+                                role = when (a11y.role) {
+                                    com.baksha97.sdui.shared.models.Role.Button -> Role.BUTTON
+                                    com.baksha97.sdui.shared.models.Role.TextField -> Role.TEXT_FIELD
+                                    com.baksha97.sdui.shared.models.Role.Header -> Role.HEADER
+                                    com.baksha97.sdui.shared.models.Role.Image -> Role.IMAGE
+                                    else -> Role.NONE
+                                },
+                                label = TemplateString(a11y.label.raw),
+                                liveRegion = when (a11y.liveRegion) {
+                                    com.baksha97.sdui.shared.models.LiveRegion.Off -> LiveRegion.OFF
+                                    com.baksha97.sdui.shared.models.LiveRegion.Polite -> LiveRegion.POLITE
+                                    com.baksha97.sdui.shared.models.LiveRegion.Assertive -> LiveRegion.ASSERTIVE
+                                },
+                                isEnabled = a11y.isEnabled,
+                                isFocusable = a11y.isFocusable
+                            )
+                        },
+                        text = TemplateString(sharedToken.text.raw),
+                        style = when (sharedToken.style) {
+                            com.baksha97.sdui.shared.models.TextStyle.BodyMedium -> TextStyle.BodyMedium
+                            com.baksha97.sdui.shared.models.TextStyle.HeadlineSmall -> TextStyle.HeadlineSmall
+                            com.baksha97.sdui.shared.models.TextStyle.TitleLarge -> TextStyle.TitleLarge
+                            else -> TextStyle.BodyMedium
+                        },
+                        color = sharedToken.color?.let { ColorValue(it.red, it.green, it.blue, it.alpha) },
+                        maxLines = sharedToken.maxLines,
+                        overflow = when (sharedToken.overflow) {
+                            com.baksha97.sdui.shared.models.TextOverflowValue.Clip -> TextOverflowValue.Clip
+                            com.baksha97.sdui.shared.models.TextOverflowValue.Ellipsis -> TextOverflowValue.Ellipsis
+                            com.baksha97.sdui.shared.models.TextOverflowValue.Visible -> TextOverflowValue.Visible
+                        },
+                        textAlign = sharedToken.textAlign?.let { align ->
+                            when (align) {
+                                com.baksha97.sdui.shared.models.TextAlignValue.Start -> TextAlignValue.Start
+                                com.baksha97.sdui.shared.models.TextAlignValue.Center -> TextAlignValue.Center
+                                com.baksha97.sdui.shared.models.TextAlignValue.End -> TextAlignValue.End
+                                else -> TextAlignValue.Start
+                            }
+                        },
+                        margin = sharedToken.margin?.let { m ->
+                            Margin(m.all, m.horizontal, m.vertical, m.start, m.top, m.end, m.bottom)
+                        }
+                    ))
+                }
+                is com.baksha97.sdui.shared.models.ButtonToken -> {
+                    register(ButtonToken(
+                        id = sharedToken.id,
+                        version = sharedToken.version,
+                        a11y = sharedToken.a11y?.let { a11y ->
+                            A11y(
+                                role = when (a11y.role) {
+                                    com.baksha97.sdui.shared.models.Role.Button -> Role.BUTTON
+                                    else -> Role.BUTTON
+                                },
+                                label = TemplateString(a11y.label.raw),
+                                liveRegion = when (a11y.liveRegion) {
+                                    com.baksha97.sdui.shared.models.LiveRegion.Off -> LiveRegion.OFF
+                                    com.baksha97.sdui.shared.models.LiveRegion.Polite -> LiveRegion.POLITE
+                                    com.baksha97.sdui.shared.models.LiveRegion.Assertive -> LiveRegion.ASSERTIVE
+                                },
+                                isEnabled = a11y.isEnabled,
+                                isFocusable = a11y.isFocusable
+                            )
+                        },
+                        text = TemplateString(sharedToken.text.raw),
+                        style = when (sharedToken.style) {
+                            com.baksha97.sdui.shared.models.ButtonStyle.Filled -> ButtonStyle.Filled
+                            com.baksha97.sdui.shared.models.ButtonStyle.Outlined -> ButtonStyle.Outlined
+                            com.baksha97.sdui.shared.models.ButtonStyle.Text -> ButtonStyle.Text
+                            com.baksha97.sdui.shared.models.ButtonStyle.Elevated -> ButtonStyle.Elevated
+                            com.baksha97.sdui.shared.models.ButtonStyle.FilledTonal -> ButtonStyle.FilledTonal
+                        },
+                        enabled = sharedToken.enabled,
+                        margin = sharedToken.margin?.let { m ->
+                            Margin(m.all, m.horizontal, m.vertical, m.start, m.top, m.end, m.bottom)
+                        },
+                        onClick = Action(
+                            type = when (sharedToken.onClick.type) {
+                                com.baksha97.sdui.shared.models.ActionType.Navigate -> ActionType.NAVIGATE
+                                com.baksha97.sdui.shared.models.ActionType.DeepLink -> ActionType.DEEP_LINK
+                                com.baksha97.sdui.shared.models.ActionType.OpenUrl -> ActionType.OPEN_URL
+                                com.baksha97.sdui.shared.models.ActionType.Custom -> ActionType.CUSTOM
+                            },
+                            data = sharedToken.onClick.data
+                        )
+                    ))
+                }
+                is com.baksha97.sdui.shared.models.CardToken -> {
+                    // Convert child tokens recursively
+                    val childTokens = mutableListOf<Token>()
+                    sharedToken.children.forEach { childSharedToken ->
+                        when (childSharedToken) {
+                            is com.baksha97.sdui.shared.models.TextToken -> {
+                                childTokens.add(TextToken(
+                                    id = childSharedToken.id,
+                                    version = childSharedToken.version,
+                                    text = TemplateString(childSharedToken.text.raw),
+                                    style = when (childSharedToken.style) {
+                                        com.baksha97.sdui.shared.models.TextStyle.BodyMedium -> TextStyle.BodyMedium
+                                        com.baksha97.sdui.shared.models.TextStyle.HeadlineSmall -> TextStyle.HeadlineSmall
+                                        com.baksha97.sdui.shared.models.TextStyle.TitleLarge -> TextStyle.TitleLarge
+                                        else -> TextStyle.BodyMedium
+                                    }
+                                ))
+                            }
+                            is com.baksha97.sdui.shared.models.ButtonToken -> {
+                                childTokens.add(ButtonToken(
+                                    id = childSharedToken.id,
+                                    version = childSharedToken.version,
+                                    text = TemplateString(childSharedToken.text.raw),
+                                    onClick = Action(
+                                        type = when (childSharedToken.onClick.type) {
+                                            com.baksha97.sdui.shared.models.ActionType.Custom -> ActionType.CUSTOM
+                                            else -> ActionType.CUSTOM
+                                        },
+                                        data = childSharedToken.onClick.data
+                                    )
+                                ))
+                            }
+                            is com.baksha97.sdui.shared.models.SliderToken -> {
+                                childTokens.add(SliderToken(
+                                    id = childSharedToken.id,
+                                    version = childSharedToken.version,
+                                    initialValue = childSharedToken.initialValue,
+                                    valueRange = childSharedToken.valueRange,
+                                    steps = childSharedToken.steps,
+                                    enabled = childSharedToken.enabled
+                                ))
+                            }
+                            else -> {
+                                // Skip unsupported child token types for now
+                                println("Unsupported child token type in CardToken: ${childSharedToken::class.simpleName}")
+                            }
+                        }
+                    }
+
+                    register(CardToken(
+                        id = sharedToken.id,
+                        version = sharedToken.version,
+                        padding = sharedToken.padding?.let { p ->
+                            Padding(p.all, p.horizontal, p.vertical, p.start, p.top, p.end, p.bottom)
+                        },
+                        margin = sharedToken.margin?.let { m ->
+                            Margin(m.all, m.horizontal, m.vertical, m.start, m.top, m.end, m.bottom)
+                        },
+                        elevation = sharedToken.elevation,
+                        shape = when (sharedToken.shape) {
+                            com.baksha97.sdui.shared.models.CardShape.Rounded4 -> CardShape.ROUNDED4
+                            com.baksha97.sdui.shared.models.CardShape.Rounded8 -> CardShape.ROUNDED8
+                            com.baksha97.sdui.shared.models.CardShape.Rounded12 -> CardShape.ROUNDED12
+                            com.baksha97.sdui.shared.models.CardShape.Rounded16 -> CardShape.ROUNDED16
+                        },
+                        background = sharedToken.background?.let { bg ->
+                            Background(
+                                color = bg.color?.let { ColorValue(it.red, it.green, it.blue, it.alpha) },
+                                borderColor = bg.borderColor?.let { ColorValue(it.red, it.green, it.blue, it.alpha) },
+                                borderWidth = bg.borderWidth,
+                                cornerRadius = bg.cornerRadius
+                            )
+                        },
+                        onClick = sharedToken.onClick?.let { action ->
+                            Action(
+                                type = when (action.type) {
+                                    com.baksha97.sdui.shared.models.ActionType.Custom -> ActionType.CUSTOM
+                                    else -> ActionType.CUSTOM
+                                },
+                                data = action.data
+                            )
+                        },
+                        children = childTokens
+                    ))
+                }
+                is com.baksha97.sdui.shared.models.BoxToken -> {
+                    // Convert child tokens recursively
+                    val childTokens = mutableListOf<Token>()
+                    sharedToken.children.forEach { childSharedToken ->
+                        when (childSharedToken) {
+                            is com.baksha97.sdui.shared.models.ColumnToken -> {
+                                // Handle nested ColumnToken - for now, create a simple column
+                                val nestedChildTokens = mutableListOf<Token>()
+                                childSharedToken.children.forEach { nestedChild ->
+                                    when (nestedChild) {
+                                        is com.baksha97.sdui.shared.models.TextToken -> {
+                                            nestedChildTokens.add(TextToken(
+                                                id = nestedChild.id,
+                                                version = nestedChild.version,
+                                                text = TemplateString(nestedChild.text.raw)
+                                            ))
+                                        }
+                                        is com.baksha97.sdui.shared.models.RowToken -> {
+                                            // Handle nested RowToken
+                                            val rowChildTokens = mutableListOf<Token>()
+                                            nestedChild.children.forEach { rowChild ->
+                                                when (rowChild) {
+                                                    is com.baksha97.sdui.shared.models.ButtonToken -> {
+                                                        rowChildTokens.add(ButtonToken(
+                                                            id = rowChild.id,
+                                                            version = rowChild.version,
+                                                            text = TemplateString(rowChild.text.raw),
+                                                            onClick = Action(
+                                                                type = when (rowChild.onClick.type) {
+                                                                    com.baksha97.sdui.shared.models.ActionType.Custom -> ActionType.CUSTOM
+                                                                    else -> ActionType.CUSTOM
+                                                                },
+                                                                data = rowChild.onClick.data
+                                                            )
+                                                        ))
+                                                    }
+                                                    else -> {
+                                                        println("Unsupported row child token type: ${rowChild::class.simpleName}")
+                                                    }
+                                                }
+                                            }
+                                            nestedChildTokens.add(RowToken(
+                                                id = nestedChild.id,
+                                                version = nestedChild.version,
+                                                children = rowChildTokens
+                                            ))
+                                        }
+                                        else -> {
+                                            println("Unsupported nested child token type: ${nestedChild::class.simpleName}")
+                                        }
+                                    }
+                                }
+                                childTokens.add(ColumnToken(
+                                    id = childSharedToken.id,
+                                    version = childSharedToken.version,
+                                    children = nestedChildTokens
+                                ))
+                            }
+                            else -> {
+                                println("Unsupported box child token type: ${childSharedToken::class.simpleName}")
+                            }
+                        }
+                    }
+
+                    register(BoxToken(
+                        id = sharedToken.id,
+                        version = sharedToken.version,
+                        padding = sharedToken.padding?.let { p ->
+                            Padding(p.all, p.horizontal, p.vertical, p.start, p.top, p.end, p.bottom)
+                        },
+                        margin = sharedToken.margin?.let { m ->
+                            Margin(m.all, m.horizontal, m.vertical, m.start, m.top, m.end, m.bottom)
+                        },
+                        background = sharedToken.background?.let { bg ->
+                            Background(
+                                color = bg.color?.let { ColorValue(it.red, it.green, it.blue, it.alpha) },
+                                borderColor = bg.borderColor?.let { ColorValue(it.red, it.green, it.blue, it.alpha) },
+                                borderWidth = bg.borderWidth,
+                                cornerRadius = bg.cornerRadius
+                            )
+                        },
+                        contentAlignment = when (sharedToken.contentAlignment) {
+                            com.baksha97.sdui.shared.models.BoxAlignment.TopStart -> BoxAlignment.TopStart
+                            com.baksha97.sdui.shared.models.BoxAlignment.TopCenter -> BoxAlignment.TopCenter
+                            com.baksha97.sdui.shared.models.BoxAlignment.TopEnd -> BoxAlignment.TopEnd
+                            com.baksha97.sdui.shared.models.BoxAlignment.CenterStart -> BoxAlignment.CenterStart
+                            com.baksha97.sdui.shared.models.BoxAlignment.Center -> BoxAlignment.Center
+                            com.baksha97.sdui.shared.models.BoxAlignment.CenterEnd -> BoxAlignment.CenterEnd
+                            com.baksha97.sdui.shared.models.BoxAlignment.BottomStart -> BoxAlignment.BottomStart
+                            com.baksha97.sdui.shared.models.BoxAlignment.BottomCenter -> BoxAlignment.BottomCenter
+                            com.baksha97.sdui.shared.models.BoxAlignment.BottomEnd -> BoxAlignment.BottomEnd
+                        },
+                        children = childTokens
+                    ))
+                }
+                // Add more token type conversions as needed
+                else -> {
+                    // For now, skip unsupported token types
+                    println("Unsupported shared token type: ${sharedToken::class.simpleName}")
+                }
+            }
+        }
+    }
+
+    // Call the original RenderScreen function
+    RenderScreen(appScreen, appRegistry, onMissingToken, onAction)
+}
+
+/**
+ * Renders a screen with tokens from the provided registry (original composeApp version)
  */
 @Composable
 fun RenderScreen(

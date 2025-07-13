@@ -157,14 +157,10 @@ fun App() {
 
             // SDUI Content
             if (!isLoading && errorMessage == null && screen != null && registry != null) {
-                // Convert shared-models types to composeApp types
-                val appScreen = screen!!.toAppScreenPayload()
-                val appRegistry = registry!!.toAppTokenRegistry()
-
-                // Render the screen with the registry
+                // Use shared-models types directly with the new overloaded RenderScreen function
                 RenderScreen(
-                    screen = appScreen,
-                    registry = appRegistry,
+                    screen = screen!!,
+                    registry = registry!!,
                     onMissingToken = { tokenId ->
                         println("Missing token: $tokenId")
                     },

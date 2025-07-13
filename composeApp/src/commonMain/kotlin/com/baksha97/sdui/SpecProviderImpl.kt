@@ -20,71 +20,164 @@ import com.baksha97.sdui.shared.models.LazyColumnToken as SharedLazyColumnToken
 import com.baksha97.sdui.shared.models.LazyRowToken as SharedLazyRowToken
 
 /**
- * Adapter functions to convert between composeApp and shared-models types
+ * Note: Conversion functions have been removed as composeApp now uses shared-models types directly
  */
 
-// Convert composeApp ScreenPayload to shared-models ScreenPayload
-fun ScreenPayload.toSharedScreenPayload(): SharedScreenPayload {
-    return SharedScreenPayload(
-        id = id,
-        tokens = tokens.map { tokenRef ->
-            SharedTokenRef(
-                id = tokenRef.id,
-                bind = tokenRef.bind.mapValues { it.value.toString() }
-            )
-        }
-    )
-}
-
-// Convert composeApp TokenRegistry to shared-models TokenRegistry
-fun TokenRegistry.toSharedTokenRegistry(): SharedTokenRegistry {
-    val sharedRegistry = SharedTokenRegistry()
-
-    // For now, we'll just create an empty registry
-    // In a real implementation, you would need to convert all tokens
-
-    return sharedRegistry
-}
-
-// Convert shared-models ScreenPayload to composeApp ScreenPayload
-fun SharedScreenPayload.toAppScreenPayload(): ScreenPayload {
-    return ScreenPayload(
-        id = id,
-        tokens = tokens.map { tokenRef ->
-            TokenRef(
-                id = tokenRef.id,
-                bind = tokenRef.bind.mapValues { it.value as Any }
-            )
-        }
-    )
-}
-
-// Convert shared-models TokenRegistry to composeApp TokenRegistry
-fun SharedTokenRegistry.toAppTokenRegistry(): TokenRegistry {
-    val appRegistry = TokenRegistry()
-
-    // For now, we'll just create an empty registry
-    // In a real implementation, you would need to convert all tokens
-
-    return appRegistry
-}
 
 /**
  * Implementation of SpecProvider that provides specs from local sources.
  */
 class LocalSpecProviderImpl : SpecProvider {
+    internal val sharedRegistry = SharedTokenRegistry().apply {
+        // Create enhanced_card token
+        register(SharedCardToken(
+            id = "enhanced_card",
+            version = 1,
+            children = listOf(
+                SharedTextToken(
+                    id = "enhanced_card.title",
+                    version = 1,
+                    text = com.baksha97.sdui.shared.models.TemplateString("{{title}}")
+                ),
+                SharedTextToken(
+                    id = "enhanced_card.description", 
+                    version = 1,
+                    text = com.baksha97.sdui.shared.models.TemplateString("{{description}}")
+                ),
+                SharedButtonToken(
+                    id = "enhanced_card.button",
+                    version = 1,
+                    text = com.baksha97.sdui.shared.models.TemplateString("{{buttonText}}"),
+                    onClick = com.baksha97.sdui.shared.models.Action(
+                        type = com.baksha97.sdui.shared.models.ActionType.Custom,
+                        data = mapOf("target" to "enhanced_card")
+                    )
+                )
+            )
+        ))
+
+        // Create slider_example token
+        register(SharedCardToken(
+            id = "slider_example",
+            version = 1,
+            children = listOf(
+                SharedTextToken(
+                    id = "slider_example.title",
+                    version = 1,
+                    text = com.baksha97.sdui.shared.models.TemplateString("{{sliderTitle}}")
+                ),
+                SharedTextToken(
+                    id = "slider_example.description",
+                    version = 1,
+                    text = com.baksha97.sdui.shared.models.TemplateString("{{sliderDescription}}")
+                ),
+                SharedSliderToken(
+                    id = "slider_example.slider",
+                    version = 1,
+                    initialValue = 0.5f,
+                    valueRange = 0f..1f
+                )
+            )
+        ))
+
+        // Create form_example token
+        register(SharedBoxToken(
+            id = "form_example",
+            version = 1,
+            children = listOf(
+                SharedColumnToken(
+                    id = "form_example.content",
+                    version = 1,
+                    children = listOf(
+                        SharedTextToken(
+                            id = "form_example.title",
+                            version = 1,
+                            text = com.baksha97.sdui.shared.models.TemplateString("{{formTitle}}")
+                        ),
+                        SharedTextToken(
+                            id = "form_example.description",
+                            version = 1,
+                            text = com.baksha97.sdui.shared.models.TemplateString("{{formDescription}}")
+                        ),
+                        SharedRowToken(
+                            id = "form_example.buttons",
+                            version = 1,
+                            children = listOf(
+                                SharedButtonToken(
+                                    id = "form_example.cancel",
+                                    version = 1,
+                                    text = com.baksha97.sdui.shared.models.TemplateString("Cancel"),
+                                    onClick = com.baksha97.sdui.shared.models.Action(
+                                        type = com.baksha97.sdui.shared.models.ActionType.Custom,
+                                        data = mapOf("action" to "cancel")
+                                    )
+                                ),
+                                SharedButtonToken(
+                                    id = "form_example.submit",
+                                    version = 1,
+                                    text = com.baksha97.sdui.shared.models.TemplateString("Submit"),
+                                    onClick = com.baksha97.sdui.shared.models.Action(
+                                        type = com.baksha97.sdui.shared.models.ActionType.Custom,
+                                        data = mapOf("action" to "submit")
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        ))
+    }
+
     private val screens = mapOf(
-        "home" to improvedHomeScreenDSL,
-        "enhanced_home" to improvedEnhancedScreenDSL
+        "home" to SharedScreenPayload(
+            id = "home",
+            tokens = listOf(
+                SharedTokenRef(
+                    id = "enhanced_card",
+                    bind = mapOf(
+                        "title" to "Welcome to SDUI",
+                        "description" to "This is a basic home screen",
+                        "buttonText" to "Get Started"
+                    )
+                )
+            )
+        ),
+        "enhanced_home" to SharedScreenPayload(
+            id = "enhanced_home",
+            tokens = listOf(
+                SharedTokenRef(
+                    id = "enhanced_card",
+                    bind = mapOf(
+                        "title" to "Enhanced SDUI",
+                        "description" to "This is an enhanced home screen with more features",
+                        "buttonText" to "Explore"
+                    )
+                ),
+                SharedTokenRef(
+                    id = "slider_example",
+                    bind = mapOf(
+                        "sliderTitle" to "Adjust Settings",
+                        "sliderDescription" to "Use the slider to adjust your preferences"
+                    )
+                ),
+                SharedTokenRef(
+                    id = "form_example",
+                    bind = mapOf(
+                        "formTitle" to "User Form",
+                        "formDescription" to "Please fill out the form below"
+                    )
+                )
+            )
+        )
     )
 
     override suspend fun getScreen(id: String): SharedScreenPayload? {
-        val screen = screens[id] ?: return null
-        return screen.toSharedScreenPayload()
+        return screens[id]
     }
 
     override suspend fun getRegistry(): SharedTokenRegistry {
-        return improvedRegistryDSL.toSharedTokenRegistry()
+        return sharedRegistry
     }
 }
 
