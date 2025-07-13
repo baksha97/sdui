@@ -69,10 +69,8 @@ class UIScopeImpl(
 /**
  * Creates a UI scope and executes the given block within it
  */
-fun ui(block: (UIScope) -> Unit) {
-    val scope = UIScopeImpl()
-    block(scope)
-}
+fun <T : Token> ui(block: context(UIScope) () -> T): T =
+    with(UIScopeImpl()) { block() }
 
 /**
  * Creates a UI scope with a custom component context and executes the given block within it

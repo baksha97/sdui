@@ -1,7 +1,7 @@
 package com.baksha97.sdui.dsl.versioning
 
-import com.baksha97.sdui.dsl.Token
-import com.baksha97.sdui.dsl.ContainerToken
+import com.baksha97.sdui.shared.models.Token
+import com.baksha97.sdui.shared.models.ContainerToken
 import kotlinx.serialization.json.*
 
 /**
@@ -23,7 +23,7 @@ class SemanticVersionManager(
     fun isCompatible(token: VersionedToken, clientVersion: SemanticVersion): Boolean {
         return token.version.isCompatibleWith(clientVersion)
     }
-    
+
     /**
      * Migrates a token to a specific version.
      * 
@@ -36,31 +36,31 @@ class SemanticVersionManager(
         if (token.version == targetVersion) {
             return token
         }
-        
+
         // If the token version is greater than the target version, we can't migrate
         if (!token.version.canMigrateTo(targetVersion)) {
             return null
         }
-        
+
         // Get the component ID for this token type
         val componentId = token.javaClass.simpleName
-        
+
         // Check if we have a registered migration path
         val migrationPath = registry.getMigrationPath(componentId, token.version, targetVersion)
-        
+
         // If we have a migration path, use it
         if (migrationPath != null) {
             // Apply custom migration logic if available
             return applyCustomMigration(token, targetVersion, migrationPath)
         }
-        
+
         // Otherwise, use default migration logic
         return when (token) {
             is VersionedContainerToken -> migrateContainerToken(token, targetVersion)
             else -> migrateSimpleToken(token, targetVersion)
         }
     }
-    
+
     /**
      * Migrates a token from JSON to a specific version.
      * 
@@ -78,35 +78,35 @@ class SemanticVersionManager(
             val versionInt = tokenJson["version"]?.jsonPrimitive?.int ?: 1
             SemanticVersion(versionInt, 0, 0)
         }
-        
+
         // If the token is already at the target version, return it as is
         if (tokenVersion == targetVersion) {
             return tokenJson
         }
-        
+
         // If the token version is greater than the target version, we can't migrate
         if (!tokenVersion.canMigrateTo(targetVersion)) {
             return null
         }
-        
+
         // Determine the token type
         val tokenType = determineTokenType(tokenJson)
-        
+
         // Check if we have a registered migration path
         val migrationPath = registry.getMigrationPath(tokenType, tokenVersion, targetVersion)
-        
+
         // If we have a migration path, use it
         if (migrationPath != null) {
             // Apply custom migration logic if available
             return applyCustomJsonMigration(tokenJson, targetVersion, migrationPath)
         }
-        
+
         // Create a mutable copy of the token JSON
         val mutableJson = tokenJson.toMutableMap()
-        
+
         // Update the version
         mutableJson["version"] = JsonPrimitive(targetVersion.toString())
-        
+
         // Migrate children if present
         val children = tokenJson["children"]?.jsonArray
         if (children != null) {
@@ -115,10 +115,10 @@ class SemanticVersionManager(
             })
             mutableJson["children"] = migratedChildren
         }
-        
+
         return JsonObject(mutableJson)
     }
-    
+
     /**
      * Determines the type of a token based on its JSON representation.
      * 
@@ -131,7 +131,7 @@ class SemanticVersionManager(
         if (typeProperty != null) {
             return typeProperty
         }
-        
+
         // If no type property, try to infer the type from the properties
         if (tokenJson.containsKey("children")) {
             // It's a container token
@@ -150,19 +150,19 @@ class SemanticVersionManager(
                 return "CardToken"
             }
         }
-        
+
         // Check for specific properties of each token type
         return when {
             tokenJson.containsKey("text") && tokenJson.containsKey("style") -> "TextToken"
             tokenJson.containsKey("text") && tokenJson.containsKey("onClick") -> "ButtonToken"
             tokenJson.containsKey("width") || tokenJson.containsKey("height") -> "SpacerToken"
             tokenJson.containsKey("thickness") -> "DividerToken"
-            tokenJson.containsKey("initialValue") && tokenJson.containsKey("rangeStart") -> "SliderToken"
+            tokenJson.containsKey("initialValue") && tokenJson.containsKey("valueRange") -> "SliderToken"
             tokenJson.containsKey("url") && tokenJson.containsKey("contentScale") -> "AsyncImageToken"
             else -> "UnknownToken"
         }
     }
-    
+
     /**
      * Applies custom migration logic to a token.
      * 
@@ -179,11 +179,11 @@ class SemanticVersionManager(
         // This is a placeholder for custom migration logic
         // In a real implementation, this would use the migration path to apply
         // specific transformations to the token
-        
+
         // For now, just update the version
         return token.withVersion(targetVersion)
     }
-    
+
     /**
      * Applies custom migration logic to a token JSON.
      * 
@@ -200,13 +200,13 @@ class SemanticVersionManager(
         // This is a placeholder for custom migration logic
         // In a real implementation, this would use the migration path to apply
         // specific transformations to the token JSON
-        
+
         // For now, just update the version
         val mutableJson = tokenJson.toMutableMap()
         mutableJson["version"] = JsonPrimitive(targetVersion.toString())
         return JsonObject(mutableJson)
     }
-    
+
     /**
      * Migrates a container token to a specific version.
      * 
@@ -222,11 +222,11 @@ class SemanticVersionManager(
         val migratedChildren = token.children.mapNotNull { 
             migrateToken(it, targetVersion) 
         }
-        
+
         // Create a new token with the migrated properties
         return token.withChildrenAndVersion(migratedChildren, targetVersion)
     }
-    
+
     /**
      * Migrates a simple token to a specific version.
      * 
@@ -248,7 +248,7 @@ class SemanticVersionManager(
  */
 interface VersionedToken {
     val version: SemanticVersion
-    
+
     /**
      * Creates a new token with the specified version.
      * 
@@ -263,7 +263,7 @@ interface VersionedToken {
  */
 interface VersionedContainerToken : VersionedToken {
     val children: List<VersionedToken>
-    
+
     /**
      * Creates a new token with the specified children and version.
      * 

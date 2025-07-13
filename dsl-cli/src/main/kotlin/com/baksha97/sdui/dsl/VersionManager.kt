@@ -1,6 +1,7 @@
 package com.baksha97.sdui.dsl
 
 import kotlinx.serialization.json.*
+import com.baksha97.sdui.shared.models.*
 
 /**
  * Manages versioning for tokens and handles migrations between different versions.
@@ -8,7 +9,7 @@ import kotlinx.serialization.json.*
  * between different versions of the schema.
  */
 class VersionManager {
-    
+
     /**
      * Checks if a token is compatible with the current client version.
      * @param token The token to check.
@@ -20,7 +21,7 @@ class VersionManager {
         // and less than or equal to the client version
         return token.version >= token.minSupportedVersion && token.version <= clientVersion
     }
-    
+
     /**
      * Migrates a token to a specific version.
      * @param token The token to migrate.
@@ -32,12 +33,12 @@ class VersionManager {
         if (token.version == targetVersion) {
             return token
         }
-        
+
         // If the token version is greater than the target version, we can't migrate
         if (token.version > targetVersion) {
             return null
         }
-        
+
         // Migrate the token based on its type
         return when (token) {
             is ColumnToken -> migrateColumnToken(token, targetVersion)
@@ -55,7 +56,7 @@ class VersionManager {
             else -> null
         }
     }
-    
+
     /**
      * Migrates a token from JSON to a specific version.
      * @param tokenJson The JSON representation of the token to migrate.
@@ -65,20 +66,20 @@ class VersionManager {
     fun migrateTokenJson(tokenJson: JsonObject, targetVersion: Int): JsonObject? {
         // Get the token version
         val tokenVersion = tokenJson["version"]?.jsonPrimitive?.int ?: 1
-        
+
         // If the token is already at the target version, return it as is
         if (tokenVersion == targetVersion) {
             return tokenJson
         }
-        
+
         // If the token version is greater than the target version, we can't migrate
         if (tokenVersion > targetVersion) {
             return null
         }
-        
+
         // Determine the token type
         val tokenType = determineTokenType(tokenJson)
-        
+
         // Migrate the token based on its type
         return when (tokenType) {
             "ColumnToken" -> migrateColumnTokenJson(tokenJson, targetVersion)
@@ -96,7 +97,7 @@ class VersionManager {
             else -> null
         }
     }
-    
+
     /**
      * Determines the type of a token based on its JSON representation.
      * @param tokenJson The JSON representation of the token.
@@ -108,7 +109,7 @@ class VersionManager {
         if (typeProperty != null) {
             return typeProperty
         }
-        
+
         // If no type property, try to infer the type from the properties
         if (tokenJson.containsKey("children")) {
             // It's a container token
@@ -127,25 +128,25 @@ class VersionManager {
                 return "CardToken"
             }
         }
-        
+
         // Check for specific properties of each token type
         return when {
             tokenJson.containsKey("text") && tokenJson.containsKey("style") -> "TextToken"
             tokenJson.containsKey("text") && tokenJson.containsKey("onClick") -> "ButtonToken"
             tokenJson.containsKey("width") || tokenJson.containsKey("height") -> "SpacerToken"
             tokenJson.containsKey("thickness") -> "DividerToken"
-            tokenJson.containsKey("initialValue") && tokenJson.containsKey("rangeStart") -> "SliderToken"
+            tokenJson.containsKey("initialValue") && tokenJson.containsKey("valueRange") -> "SliderToken"
             tokenJson.containsKey("url") && tokenJson.containsKey("contentScale") -> "AsyncImageToken"
             else -> "UnknownToken"
         }
     }
-    
+
     // Migration methods for token objects
-    
+
     private fun migrateColumnToken(token: ColumnToken, targetVersion: Int): ColumnToken {
         // Migrate children
         val migratedChildren = token.children.mapNotNull { migrateToken(it, targetVersion) }
-        
+
         // Create a new token with the migrated properties
         return ColumnToken(
             id = token.id,
@@ -158,11 +159,11 @@ class VersionManager {
             children = migratedChildren
         )
     }
-    
+
     private fun migrateRowToken(token: RowToken, targetVersion: Int): RowToken {
         // Migrate children
         val migratedChildren = token.children.mapNotNull { migrateToken(it, targetVersion) }
-        
+
         // Create a new token with the migrated properties
         return RowToken(
             id = token.id,
@@ -175,11 +176,11 @@ class VersionManager {
             children = migratedChildren
         )
     }
-    
+
     private fun migrateBoxToken(token: BoxToken, targetVersion: Int): BoxToken {
         // Migrate children
         val migratedChildren = token.children.mapNotNull { migrateToken(it, targetVersion) }
-        
+
         // Create a new token with the migrated properties
         return BoxToken(
             id = token.id,
@@ -192,11 +193,11 @@ class VersionManager {
             children = migratedChildren
         )
     }
-    
+
     private fun migrateCardToken(token: CardToken, targetVersion: Int): CardToken {
         // Migrate children
         val migratedChildren = token.children.mapNotNull { migrateToken(it, targetVersion) }
-        
+
         // Create a new token with the migrated properties
         return CardToken(
             id = token.id,
@@ -211,7 +212,7 @@ class VersionManager {
             children = migratedChildren
         )
     }
-    
+
     private fun migrateTextToken(token: TextToken, targetVersion: Int): TextToken {
         // Create a new token with the migrated properties
         return TextToken(
@@ -227,7 +228,7 @@ class VersionManager {
             margin = token.margin
         )
     }
-    
+
     private fun migrateButtonToken(token: ButtonToken, targetVersion: Int): ButtonToken {
         // Create a new token with the migrated properties
         return ButtonToken(
@@ -241,7 +242,7 @@ class VersionManager {
             onClick = token.onClick
         )
     }
-    
+
     private fun migrateSpacerToken(token: SpacerToken, targetVersion: Int): SpacerToken {
         // Create a new token with the migrated properties
         return SpacerToken(
@@ -252,7 +253,7 @@ class VersionManager {
             height = token.height
         )
     }
-    
+
     private fun migrateDividerToken(token: DividerToken, targetVersion: Int): DividerToken {
         // Create a new token with the migrated properties
         return DividerToken(
@@ -264,7 +265,7 @@ class VersionManager {
             margin = token.margin
         )
     }
-    
+
     private fun migrateSliderToken(token: SliderToken, targetVersion: Int): SliderToken {
         // Create a new token with the migrated properties
         return SliderToken(
@@ -272,15 +273,14 @@ class VersionManager {
             version = targetVersion,
             a11y = token.a11y,
             initialValue = token.initialValue,
-            rangeStart = token.rangeStart,
-            rangeEnd = token.rangeEnd,
+            valueRange = token.valueRange,
             steps = token.steps,
             enabled = token.enabled,
             margin = token.margin,
             onChange = token.onChange
         )
     }
-    
+
     private fun migrateAsyncImageToken(token: AsyncImageToken, targetVersion: Int): AsyncImageToken {
         // Create a new token with the migrated properties
         return AsyncImageToken(
@@ -299,11 +299,11 @@ class VersionManager {
             onClick = token.onClick
         )
     }
-    
+
     private fun migrateLazyColumnToken(token: LazyColumnToken, targetVersion: Int): LazyColumnToken {
         // Migrate children
         val migratedChildren = token.children.mapNotNull { migrateToken(it, targetVersion) }
-        
+
         // Create a new token with the migrated properties
         return LazyColumnToken(
             id = token.id,
@@ -316,11 +316,11 @@ class VersionManager {
             children = migratedChildren
         )
     }
-    
+
     private fun migrateLazyRowToken(token: LazyRowToken, targetVersion: Int): LazyRowToken {
         // Migrate children
         val migratedChildren = token.children.mapNotNull { migrateToken(it, targetVersion) }
-        
+
         // Create a new token with the migrated properties
         return LazyRowToken(
             id = token.id,
@@ -333,16 +333,16 @@ class VersionManager {
             children = migratedChildren
         )
     }
-    
+
     // Migration methods for token JSON
-    
+
     private fun migrateColumnTokenJson(tokenJson: JsonObject, targetVersion: Int): JsonObject {
         // Create a mutable copy of the token JSON
         val mutableJson = tokenJson.toMutableMap()
-        
+
         // Update the version
         mutableJson["version"] = JsonPrimitive(targetVersion)
-        
+
         // Migrate children if present
         val children = tokenJson["children"]?.jsonArray
         if (children != null) {
@@ -351,17 +351,17 @@ class VersionManager {
             })
             mutableJson["children"] = migratedChildren
         }
-        
+
         return JsonObject(mutableJson)
     }
-    
+
     private fun migrateRowTokenJson(tokenJson: JsonObject, targetVersion: Int): JsonObject {
         // Create a mutable copy of the token JSON
         val mutableJson = tokenJson.toMutableMap()
-        
+
         // Update the version
         mutableJson["version"] = JsonPrimitive(targetVersion)
-        
+
         // Migrate children if present
         val children = tokenJson["children"]?.jsonArray
         if (children != null) {
@@ -370,17 +370,17 @@ class VersionManager {
             })
             mutableJson["children"] = migratedChildren
         }
-        
+
         return JsonObject(mutableJson)
     }
-    
+
     private fun migrateBoxTokenJson(tokenJson: JsonObject, targetVersion: Int): JsonObject {
         // Create a mutable copy of the token JSON
         val mutableJson = tokenJson.toMutableMap()
-        
+
         // Update the version
         mutableJson["version"] = JsonPrimitive(targetVersion)
-        
+
         // Migrate children if present
         val children = tokenJson["children"]?.jsonArray
         if (children != null) {
@@ -389,17 +389,17 @@ class VersionManager {
             })
             mutableJson["children"] = migratedChildren
         }
-        
+
         return JsonObject(mutableJson)
     }
-    
+
     private fun migrateCardTokenJson(tokenJson: JsonObject, targetVersion: Int): JsonObject {
         // Create a mutable copy of the token JSON
         val mutableJson = tokenJson.toMutableMap()
-        
+
         // Update the version
         mutableJson["version"] = JsonPrimitive(targetVersion)
-        
+
         // Migrate children if present
         val children = tokenJson["children"]?.jsonArray
         if (children != null) {
@@ -408,77 +408,77 @@ class VersionManager {
             })
             mutableJson["children"] = migratedChildren
         }
-        
+
         return JsonObject(mutableJson)
     }
-    
+
     private fun migrateTextTokenJson(tokenJson: JsonObject, targetVersion: Int): JsonObject {
         // Create a mutable copy of the token JSON
         val mutableJson = tokenJson.toMutableMap()
-        
+
         // Update the version
         mutableJson["version"] = JsonPrimitive(targetVersion)
-        
+
         return JsonObject(mutableJson)
     }
-    
+
     private fun migrateButtonTokenJson(tokenJson: JsonObject, targetVersion: Int): JsonObject {
         // Create a mutable copy of the token JSON
         val mutableJson = tokenJson.toMutableMap()
-        
+
         // Update the version
         mutableJson["version"] = JsonPrimitive(targetVersion)
-        
+
         return JsonObject(mutableJson)
     }
-    
+
     private fun migrateSpacerTokenJson(tokenJson: JsonObject, targetVersion: Int): JsonObject {
         // Create a mutable copy of the token JSON
         val mutableJson = tokenJson.toMutableMap()
-        
+
         // Update the version
         mutableJson["version"] = JsonPrimitive(targetVersion)
-        
+
         return JsonObject(mutableJson)
     }
-    
+
     private fun migrateDividerTokenJson(tokenJson: JsonObject, targetVersion: Int): JsonObject {
         // Create a mutable copy of the token JSON
         val mutableJson = tokenJson.toMutableMap()
-        
+
         // Update the version
         mutableJson["version"] = JsonPrimitive(targetVersion)
-        
+
         return JsonObject(mutableJson)
     }
-    
+
     private fun migrateSliderTokenJson(tokenJson: JsonObject, targetVersion: Int): JsonObject {
         // Create a mutable copy of the token JSON
         val mutableJson = tokenJson.toMutableMap()
-        
+
         // Update the version
         mutableJson["version"] = JsonPrimitive(targetVersion)
-        
+
         return JsonObject(mutableJson)
     }
-    
+
     private fun migrateAsyncImageTokenJson(tokenJson: JsonObject, targetVersion: Int): JsonObject {
         // Create a mutable copy of the token JSON
         val mutableJson = tokenJson.toMutableMap()
-        
+
         // Update the version
         mutableJson["version"] = JsonPrimitive(targetVersion)
-        
+
         return JsonObject(mutableJson)
     }
-    
+
     private fun migrateLazyColumnTokenJson(tokenJson: JsonObject, targetVersion: Int): JsonObject {
         // Create a mutable copy of the token JSON
         val mutableJson = tokenJson.toMutableMap()
-        
+
         // Update the version
         mutableJson["version"] = JsonPrimitive(targetVersion)
-        
+
         // Migrate children if present
         val children = tokenJson["children"]?.jsonArray
         if (children != null) {
@@ -487,17 +487,17 @@ class VersionManager {
             })
             mutableJson["children"] = migratedChildren
         }
-        
+
         return JsonObject(mutableJson)
     }
-    
+
     private fun migrateLazyRowTokenJson(tokenJson: JsonObject, targetVersion: Int): JsonObject {
         // Create a mutable copy of the token JSON
         val mutableJson = tokenJson.toMutableMap()
-        
+
         // Update the version
         mutableJson["version"] = JsonPrimitive(targetVersion)
-        
+
         // Migrate children if present
         val children = tokenJson["children"]?.jsonArray
         if (children != null) {
@@ -506,7 +506,7 @@ class VersionManager {
             })
             mutableJson["children"] = migratedChildren
         }
-        
+
         return JsonObject(mutableJson)
     }
 }

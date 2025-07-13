@@ -1,6 +1,6 @@
 package com.baksha97.sdui.dsl.versioning
 
-import com.baksha97.sdui.dsl.*
+import com.baksha97.sdui.shared.models.*
 
 /**
  * Adapter class that bridges between the existing Token classes and the new semantic versioning system.
@@ -9,7 +9,7 @@ import com.baksha97.sdui.dsl.*
  * without requiring changes to the existing codebase.
  */
 object TokenAdapter {
-    
+
     /**
      * Converts a Token to a VersionedToken.
      * 
@@ -22,7 +22,7 @@ object TokenAdapter {
             else -> toVersionedSimpleToken(token)
         }
     }
-    
+
     /**
      * Converts a ContainerToken to a VersionedContainerToken.
      * 
@@ -36,7 +36,7 @@ object TokenAdapter {
             children = token.children.map { toVersionedToken(it) }
         )
     }
-    
+
     /**
      * Converts a simple Token to a VersionedToken.
      * 
@@ -49,7 +49,7 @@ object TokenAdapter {
             version = SemanticVersion(token.version, 0, 0)
         )
     }
-    
+
     /**
      * Converts a VersionedToken back to a Token.
      * 
@@ -63,7 +63,7 @@ object TokenAdapter {
             else -> throw IllegalArgumentException("Unsupported token type: ${token.javaClass.name}")
         }
     }
-    
+
     /**
      * Implementation of VersionedToken that wraps an existing Token.
      */
@@ -75,7 +75,7 @@ object TokenAdapter {
             return copy(version = newVersion)
         }
     }
-    
+
     /**
      * Implementation of VersionedContainerToken that wraps an existing ContainerToken.
      */
@@ -87,7 +87,7 @@ object TokenAdapter {
         override fun withVersion(newVersion: SemanticVersion): VersionedToken {
             return copy(version = newVersion)
         }
-        
+
         override fun withChildrenAndVersion(
             newChildren: List<VersionedToken>,
             newVersion: SemanticVersion
@@ -95,7 +95,7 @@ object TokenAdapter {
             return copy(children = newChildren, version = newVersion)
         }
     }
-    
+
     /**
      * Extension function to copy a Token with a new version.
      */
@@ -113,7 +113,6 @@ object TokenAdapter {
             is AsyncImageToken -> copy(version = version)
             is LazyColumnToken -> copy(version = version)
             is LazyRowToken -> copy(version = version)
-            else -> throw IllegalArgumentException("Unsupported token type: ${this.javaClass.name}")
         }
     }
 }

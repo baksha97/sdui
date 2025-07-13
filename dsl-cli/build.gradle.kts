@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+
 plugins {
     alias(libs.plugins.kotlinJvm)
     application
@@ -16,4 +18,11 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect:2.2.0")
     implementation(project(":shared-models"))
     testImplementation(libs.kotlin.testJunit)
+}
+
+kotlin {
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    compilerOptions {
+        freeCompilerArgs.add("-Xcontext-parameters")
+    }
 }

@@ -1,5 +1,6 @@
 package com.baksha97.sdui.dsl
 
+import com.baksha97.sdui.shared.models.*
 import org.junit.Test
 import org.junit.Assert.*
 import kotlinx.serialization.json.*
@@ -140,7 +141,7 @@ class VersionManagerTest {
                     id = "child_button",
                     version = 1,
                     text = TemplateString("Child Button"),
-                    onClick = Action(ActionType.CUSTOM, mapOf("action" to "child_button_click"))
+                    onClick = Action(ActionType.Custom, mapOf("action" to "child_button_click"))
                 )
             )
         )

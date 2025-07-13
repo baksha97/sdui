@@ -10,190 +10,265 @@ interface TokenBuilder<T : Token> {
     fun build(): T
 }
 
+// Common properties interface for builders that support basic styling
+interface BaseBuilderProperties {
+    var id: String?
+    var version: Int
+    var a11y: A11y?
+}
+
+// Interface for builders that support padding
+interface PaddingSupport {
+    var padding: Padding?
+}
+
+// Interface for builders that support margin
+interface MarginSupport {
+    var margin: Margin?
+}
+
+// Interface for builders that support background
+interface BackgroundSupport {
+    var background: Background?
+}
+
+// Interface for builders that support onClick actions
+interface ClickSupport {
+    var onClick: Action?
+}
+
+// Interface for container builders that have children
+interface ContainerSupport {
+    val children: MutableList<Token>
+}
+
+// Interface for builders that support text property
+interface TextSupport {
+    var text: TemplateString
+}
+
+// Interface for builders that support url property
+interface UrlSupport {
+    var url: TemplateString
+}
+
+// Interface for builders that support color property
+interface ColorSupport {
+    var color: ColorValue?
+}
+
+// Extension functions for common property builders
+fun PaddingSupport.padding(init: PaddingBuilder.() -> Unit) {
+    padding = PaddingBuilder().apply(init).build()
+}
+
+fun MarginSupport.margin(init: MarginBuilder.() -> Unit) {
+    margin = MarginBuilder().apply(init).build()
+}
+
+fun BackgroundSupport.background(init: BackgroundBuilder.() -> Unit) {
+    background = BackgroundBuilder().apply(init).build()
+}
+
+fun BaseBuilderProperties.a11y(init: A11yBuilder.() -> Unit) {
+    a11y = A11yBuilder().apply(init).build()
+}
+
+fun ClickSupport.onClick(init: ActionBuilder.() -> Unit) {
+    onClick = ActionBuilder().apply(init).build()
+}
+
+// Legacy functions for backward compatibility (deprecated - use property assignment instead)
+@Deprecated("Use textContent = \"value\" instead for clarity", ReplaceWith("textContent = value"))
+fun TextSupport.text(value: String) {
+    text = TemplateString(value)
+}
+
+@Deprecated("Use urlSource = \"value\" instead for clarity", ReplaceWith("urlSource = value"))
+fun UrlSupport.url(value: String) {
+    url = TemplateString(value)
+}
+
+// Extension properties for convenient string assignment
+// Allows using textContent = "value" instead of text = TemplateString("value")
+var TextSupport.textContent: String
+    get() = text.raw
+    set(value) { text = TemplateString(value) }
+
+var UrlSupport.urlSource: String
+    get() = url.raw
+    set(value) { url = TemplateString(value) }
+
+
+
+fun ColorSupport.color(init: ColorBuilder.() -> Unit) {
+    color = ColorBuilder().apply(init).build()
+}
+
+// Non-context versions of container functions for use within builder blocks
+fun ContainerSupport.column(id: String, init: ColumnBuilder.() -> Unit) {
+    val builder = ColumnBuilder(id)
+    builder.apply(init)
+    children.add(builder.build())
+}
+
+fun ContainerSupport.row(id: String, init: RowBuilder.() -> Unit) {
+    val builder = RowBuilder(id)
+    builder.apply(init)
+    children.add(builder.build())
+}
+
+fun ContainerSupport.box(id: String, init: BoxBuilder.() -> Unit) {
+    val builder = BoxBuilder(id)
+    builder.apply(init)
+    children.add(builder.build())
+}
+
+fun ContainerSupport.text(id: String, init: TextBuilder.() -> Unit) {
+    val builder = TextBuilder(id)
+    builder.apply(init)
+    children.add(builder.build())
+}
+
+fun ContainerSupport.button(id: String, init: ButtonBuilder.() -> Unit) {
+    val builder = ButtonBuilder(id)
+    builder.apply(init)
+    children.add(builder.build())
+}
+
+fun ContainerSupport.spacer(id: String, init: SpacerBuilder.() -> Unit) {
+    val builder = SpacerBuilder(id)
+    builder.apply(init)
+    children.add(builder.build())
+}
+
+fun ContainerSupport.divider(id: String, init: DividerBuilder.() -> Unit) {
+    val builder = DividerBuilder(id)
+    builder.apply(init)
+    children.add(builder.build())
+}
+
+fun ContainerSupport.asyncImage(id: String, init: AsyncImageBuilder.() -> Unit) {
+    val builder = AsyncImageBuilder(id)
+    builder.apply(init)
+    children.add(builder.build())
+}
+
+fun ContainerSupport.card(id: String, init: CardBuilder.() -> Unit) {
+    val builder = CardBuilder(id)
+    builder.apply(init)
+    children.add(builder.build())
+}
+
+fun ContainerSupport.lazyColumn(id: String, init: LazyColumnBuilder.() -> Unit) {
+    val builder = LazyColumnBuilder(id)
+    builder.apply(init)
+    children.add(builder.build())
+}
+
+fun ContainerSupport.lazyRow(id: String, init: LazyRowBuilder.() -> Unit) {
+    val builder = LazyRowBuilder(id)
+    builder.apply(init)
+    children.add(builder.build())
+}
+
+fun ContainerSupport.slider(id: String, init: SliderBuilder.() -> Unit) {
+    val builder = SliderBuilder(id)
+    builder.apply(init)
+    children.add(builder.build())
+}
+
+// Generic function for adding child components with context management
+context(uiScope: UIScope)
+inline fun <reified T : TokenBuilder<*>> ContainerSupport.addChild(
+    id: String? = null,
+    builderFactory: (String) -> T,
+    init: T.() -> Unit
+) {
+    val componentName = T::class.simpleName?.removeSuffix("Builder") ?: "Unknown"
+    val actualId = id ?: uiScope.componentContext.generateId(componentName)
+    val builder = builderFactory(actualId)
+    uiScope.componentContext.pushId(actualId)
+    try {
+        builder.apply(init)
+        children.add(builder.build())
+    } finally {
+        uiScope.componentContext.popId()
+    }
+}
+
+// Extension functions for container builders to add child components
+context(uiScope: UIScope)
+fun ContainerSupport.column(id: String? = null, init: ColumnBuilder.() -> Unit) {
+    addChild<ColumnBuilder>(id, ::ColumnBuilder, init)
+}
+
+context(uiScope: UIScope)
+fun ContainerSupport.row(id: String? = null, init: RowBuilder.() -> Unit) {
+    addChild<RowBuilder>(id, ::RowBuilder, init)
+}
+
+context(uiScope: UIScope)
+fun ContainerSupport.box(id: String? = null, init: BoxBuilder.() -> Unit) {
+    addChild<BoxBuilder>(id, ::BoxBuilder, init)
+}
+
+context(uiScope: UIScope)
+fun ContainerSupport.text(id: String? = null, init: TextBuilder.() -> Unit) {
+    addChild<TextBuilder>(id, ::TextBuilder, init)
+}
+
+context(uiScope: UIScope)
+fun ContainerSupport.button(id: String? = null, init: ButtonBuilder.() -> Unit) {
+    addChild<ButtonBuilder>(id, ::ButtonBuilder, init)
+}
+
+context(uiScope: UIScope)
+fun ContainerSupport.spacer(id: String? = null, init: SpacerBuilder.() -> Unit) {
+    addChild<SpacerBuilder>(id, ::SpacerBuilder, init)
+}
+
+context(uiScope: UIScope)
+fun ContainerSupport.divider(id: String? = null, init: DividerBuilder.() -> Unit) {
+    addChild<DividerBuilder>(id, ::DividerBuilder, init)
+}
+
+context(uiScope: UIScope)
+fun ContainerSupport.asyncImage(id: String? = null, init: AsyncImageBuilder.() -> Unit) {
+    addChild<AsyncImageBuilder>(id, ::AsyncImageBuilder, init)
+}
+
+context(uiScope: UIScope)
+fun ContainerSupport.card(id: String? = null, init: CardBuilder.() -> Unit) {
+    addChild<CardBuilder>(id, ::CardBuilder, init)
+}
+
+context(uiScope: UIScope)
+fun ContainerSupport.lazyColumn(id: String? = null, init: LazyColumnBuilder.() -> Unit) {
+    addChild<LazyColumnBuilder>(id, ::LazyColumnBuilder, init)
+}
+
+context(uiScope: UIScope)
+fun ContainerSupport.lazyRow(id: String? = null, init: LazyRowBuilder.() -> Unit) {
+    addChild<LazyRowBuilder>(id, ::LazyRowBuilder, init)
+}
+
+context(uiScope: UIScope)
+fun ContainerSupport.slider(id: String? = null, init: SliderBuilder.() -> Unit) {
+    addChild<SliderBuilder>(id, ::SliderBuilder, init)
+}
+
 // Builder classes for each token type
 class ColumnBuilder(
-    var id: String? = null,
-    var version: Int = 1,
-    var a11y: A11y? = null,
-    var padding: Padding? = null,
-    var margin: Margin? = null,
-    var background: Background? = null,
+    override var id: String? = null,
+    override var version: Int = 1,
+    override var a11y: A11y? = null,
+    override var padding: Padding? = null,
+    override var margin: Margin? = null,
+    override var background: Background? = null,
     var alignment: HorizontalAlignment = HorizontalAlignment.Start,
-    val children: MutableList<Token> = mutableListOf()
-) : TokenBuilder<ColumnToken> {
-
-    fun padding(init: PaddingBuilder.() -> Unit) {
-        padding = PaddingBuilder().apply(init).build()
-    }
-
-    fun margin(init: MarginBuilder.() -> Unit) {
-        margin = MarginBuilder().apply(init).build()
-    }
-
-    fun background(init: BackgroundBuilder.() -> Unit) {
-        background = BackgroundBuilder().apply(init).build()
-    }
-
-    fun a11y(init: A11yBuilder.() -> Unit) {
-        a11y = A11yBuilder().apply(init).build()
-    }
-
-    // Child builders with context parameter support
-    context(uiScope: UIScope)
-    fun column(id: String? = null, init: ColumnBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Column")
-        val builder = ColumnBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun row(id: String? = null, init: RowBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Row")
-        val builder = RowBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun box(id: String? = null, init: BoxBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Box")
-        val builder = BoxBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun text(id: String? = null, init: TextBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Text")
-        val builder = TextBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun button(id: String? = null, init: ButtonBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Button")
-        val builder = ButtonBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun spacer(id: String? = null, init: SpacerBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Spacer")
-        val builder = SpacerBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun divider(id: String? = null, init: DividerBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Divider")
-        val builder = DividerBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun asyncImage(id: String? = null, init: AsyncImageBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("AsyncImage")
-        val builder = AsyncImageBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun card(id: String? = null, init: CardBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Card")
-        val builder = CardBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun lazyColumn(id: String? = null, init: LazyColumnBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("LazyColumn")
-        val builder = LazyColumnBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun lazyRow(id: String? = null, init: LazyRowBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("LazyRow")
-        val builder = LazyRowBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun slider(id: String? = null, init: SliderBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Slider")
-        val builder = SliderBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
+    override val children: MutableList<Token> = mutableListOf()
+) : TokenBuilder<ColumnToken>, BaseBuilderProperties, PaddingSupport, MarginSupport, BackgroundSupport, ContainerSupport {
 
     override fun build(): ColumnToken {
         val actualId = id ?: error("ID must be provided for ColumnToken")
@@ -212,149 +287,15 @@ class ColumnBuilder(
 }
 
 class RowBuilder(
-    var id: String? = null,
-    var version: Int = 1,
-    var a11y: A11y? = null,
-    var padding: Padding? = null,
-    var margin: Margin? = null,
-    var background: Background? = null,
+    override var id: String? = null,
+    override var version: Int = 1,
+    override var a11y: A11y? = null,
+    override var padding: Padding? = null,
+    override var margin: Margin? = null,
+    override var background: Background? = null,
     var alignment: VerticalAlignment = VerticalAlignment.CenterVertically,
-    val children: MutableList<Token> = mutableListOf()
-) : TokenBuilder<RowToken> {
-
-    fun padding(init: PaddingBuilder.() -> Unit) {
-        padding = PaddingBuilder().apply(init).build()
-    }
-
-    fun margin(init: MarginBuilder.() -> Unit) {
-        margin = MarginBuilder().apply(init).build()
-    }
-
-    fun background(init: BackgroundBuilder.() -> Unit) {
-        background = BackgroundBuilder().apply(init).build()
-    }
-
-    fun a11y(init: A11yBuilder.() -> Unit) {
-        a11y = A11yBuilder().apply(init).build()
-    }
-
-    // Child builders with context parameter support
-    context(uiScope: UIScope)
-    fun column(id: String? = null, init: ColumnBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Column")
-        val builder = ColumnBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun row(id: String? = null, init: RowBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Row")
-        val builder = RowBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun box(id: String? = null, init: BoxBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Box")
-        val builder = BoxBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun text(id: String? = null, init: TextBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Text")
-        val builder = TextBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun button(id: String? = null, init: ButtonBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Button")
-        val builder = ButtonBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun spacer(id: String? = null, init: SpacerBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Spacer")
-        val builder = SpacerBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun divider(id: String? = null, init: DividerBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Divider")
-        val builder = DividerBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun asyncImage(id: String? = null, init: AsyncImageBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("AsyncImage")
-        val builder = AsyncImageBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun card(id: String? = null, init: CardBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Card")
-        val builder = CardBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
+    override val children: MutableList<Token> = mutableListOf()
+) : TokenBuilder<RowToken>, BaseBuilderProperties, PaddingSupport, MarginSupport, BackgroundSupport, ContainerSupport {
 
     override fun build(): RowToken {
         val actualId = id ?: error("ID must be provided for RowToken")
@@ -373,149 +314,15 @@ class RowBuilder(
 }
 
 class BoxBuilder(
-    var id: String? = null,
-    var version: Int = 1,
-    var a11y: A11y? = null,
-    var padding: Padding? = null,
-    var margin: Margin? = null,
-    var background: Background? = null,
+    override var id: String? = null,
+    override var version: Int = 1,
+    override var a11y: A11y? = null,
+    override var padding: Padding? = null,
+    override var margin: Margin? = null,
+    override var background: Background? = null,
     var contentAlignment: BoxAlignment = BoxAlignment.Center,
-    val children: MutableList<Token> = mutableListOf()
-) : TokenBuilder<BoxToken> {
-
-    fun padding(init: PaddingBuilder.() -> Unit) {
-        padding = PaddingBuilder().apply(init).build()
-    }
-
-    fun margin(init: MarginBuilder.() -> Unit) {
-        margin = MarginBuilder().apply(init).build()
-    }
-
-    fun background(init: BackgroundBuilder.() -> Unit) {
-        background = BackgroundBuilder().apply(init).build()
-    }
-
-    fun a11y(init: A11yBuilder.() -> Unit) {
-        a11y = A11yBuilder().apply(init).build()
-    }
-
-    // Child builders with context parameter support
-    context(uiScope: UIScope)
-    fun column(id: String? = null, init: ColumnBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Column")
-        val builder = ColumnBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun row(id: String? = null, init: RowBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Row")
-        val builder = RowBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun box(id: String? = null, init: BoxBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Box")
-        val builder = BoxBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun text(id: String? = null, init: TextBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Text")
-        val builder = TextBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun button(id: String? = null, init: ButtonBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Button")
-        val builder = ButtonBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun spacer(id: String? = null, init: SpacerBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Spacer")
-        val builder = SpacerBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun divider(id: String? = null, init: DividerBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Divider")
-        val builder = DividerBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun asyncImage(id: String? = null, init: AsyncImageBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("AsyncImage")
-        val builder = AsyncImageBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun card(id: String? = null, init: CardBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Card")
-        val builder = CardBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
+    override val children: MutableList<Token> = mutableListOf()
+) : TokenBuilder<BoxToken>, BaseBuilderProperties, PaddingSupport, MarginSupport, BackgroundSupport, ContainerSupport {
 
     override fun build(): BoxToken {
         val actualId = id ?: error("ID must be provided for BoxToken")
@@ -534,142 +341,17 @@ class BoxBuilder(
 }
 
 class CardBuilder(
-    var id: String? = null,
-    var version: Int = 1,
-    var a11y: A11y? = null,
-    var padding: Padding? = null,
-    var margin: Margin? = null,
+    override var id: String? = null,
+    override var version: Int = 1,
+    override var a11y: A11y? = null,
+    override var padding: Padding? = null,
+    override var margin: Margin? = null,
     var elevation: Int = 1,
     var shape: CardShape = CardShape.Rounded8,
-    var background: Background? = null,
-    var onClick: Action? = null,
-    val children: MutableList<Token> = mutableListOf()
-) : TokenBuilder<CardToken> {
-
-    fun padding(init: PaddingBuilder.() -> Unit) {
-        padding = PaddingBuilder().apply(init).build()
-    }
-
-    fun margin(init: MarginBuilder.() -> Unit) {
-        margin = MarginBuilder().apply(init).build()
-    }
-
-    fun background(init: BackgroundBuilder.() -> Unit) {
-        background = BackgroundBuilder().apply(init).build()
-    }
-
-    fun a11y(init: A11yBuilder.() -> Unit) {
-        a11y = A11yBuilder().apply(init).build()
-    }
-
-    fun onClick(init: ActionBuilder.() -> Unit) {
-        onClick = ActionBuilder().apply(init).build()
-    }
-
-    // Child builders with context parameter support
-    context(uiScope: UIScope)
-    fun column(id: String? = null, init: ColumnBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Column")
-        val builder = ColumnBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun row(id: String? = null, init: RowBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Row")
-        val builder = RowBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun box(id: String? = null, init: BoxBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Box")
-        val builder = BoxBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun text(id: String? = null, init: TextBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Text")
-        val builder = TextBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun button(id: String? = null, init: ButtonBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Button")
-        val builder = ButtonBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun spacer(id: String? = null, init: SpacerBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Spacer")
-        val builder = SpacerBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun divider(id: String? = null, init: DividerBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Divider")
-        val builder = DividerBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun asyncImage(id: String? = null, init: AsyncImageBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("AsyncImage")
-        val builder = AsyncImageBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
+    override var background: Background? = null,
+    override var onClick: Action? = null,
+    override val children: MutableList<Token> = mutableListOf()
+) : TokenBuilder<CardToken>, BaseBuilderProperties, PaddingSupport, MarginSupport, BackgroundSupport, ClickSupport, ContainerSupport {
 
     override fun build(): CardToken {
         val actualId = id ?: error("ID must be provided for CardToken")
@@ -690,149 +372,15 @@ class CardBuilder(
 }
 
 class LazyColumnBuilder(
-    var id: String? = null,
-    var version: Int = 1,
-    var a11y: A11y? = null,
-    var padding: Padding? = null,
-    var margin: Margin? = null,
-    var background: Background? = null,
+    override var id: String? = null,
+    override var version: Int = 1,
+    override var a11y: A11y? = null,
+    override var padding: Padding? = null,
+    override var margin: Margin? = null,
+    override var background: Background? = null,
     var alignment: HorizontalAlignment = HorizontalAlignment.Start,
-    val children: MutableList<Token> = mutableListOf()
-) : TokenBuilder<LazyColumnToken> {
-
-    fun padding(init: PaddingBuilder.() -> Unit) {
-        padding = PaddingBuilder().apply(init).build()
-    }
-
-    fun margin(init: MarginBuilder.() -> Unit) {
-        margin = MarginBuilder().apply(init).build()
-    }
-
-    fun background(init: BackgroundBuilder.() -> Unit) {
-        background = BackgroundBuilder().apply(init).build()
-    }
-
-    fun a11y(init: A11yBuilder.() -> Unit) {
-        a11y = A11yBuilder().apply(init).build()
-    }
-
-    // Child builders with context parameter support
-    context(uiScope: UIScope)
-    fun column(id: String? = null, init: ColumnBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Column")
-        val builder = ColumnBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun row(id: String? = null, init: RowBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Row")
-        val builder = RowBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun box(id: String? = null, init: BoxBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Box")
-        val builder = BoxBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun text(id: String? = null, init: TextBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Text")
-        val builder = TextBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun button(id: String? = null, init: ButtonBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Button")
-        val builder = ButtonBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun spacer(id: String? = null, init: SpacerBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Spacer")
-        val builder = SpacerBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun divider(id: String? = null, init: DividerBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Divider")
-        val builder = DividerBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun asyncImage(id: String? = null, init: AsyncImageBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("AsyncImage")
-        val builder = AsyncImageBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun card(id: String? = null, init: CardBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Card")
-        val builder = CardBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
+    override val children: MutableList<Token> = mutableListOf()
+) : TokenBuilder<LazyColumnToken>, ContainerSupport, BaseBuilderProperties, PaddingSupport, MarginSupport, BackgroundSupport {
 
     override fun build(): LazyColumnToken {
         val actualId = id ?: error("ID must be provided for LazyColumnToken")
@@ -851,149 +399,15 @@ class LazyColumnBuilder(
 }
 
 class LazyRowBuilder(
-    var id: String? = null,
-    var version: Int = 1,
-    var a11y: A11y? = null,
-    var padding: Padding? = null,
-    var margin: Margin? = null,
-    var background: Background? = null,
+    override var id: String? = null,
+    override var version: Int = 1,
+    override var a11y: A11y? = null,
+    override var padding: Padding? = null,
+    override var margin: Margin? = null,
+    override var background: Background? = null,
     var alignment: VerticalAlignment = VerticalAlignment.CenterVertically,
-    val children: MutableList<Token> = mutableListOf()
-) : TokenBuilder<LazyRowToken> {
-
-    fun padding(init: PaddingBuilder.() -> Unit) {
-        padding = PaddingBuilder().apply(init).build()
-    }
-
-    fun margin(init: MarginBuilder.() -> Unit) {
-        margin = MarginBuilder().apply(init).build()
-    }
-
-    fun background(init: BackgroundBuilder.() -> Unit) {
-        background = BackgroundBuilder().apply(init).build()
-    }
-
-    fun a11y(init: A11yBuilder.() -> Unit) {
-        a11y = A11yBuilder().apply(init).build()
-    }
-
-    // Child builders with context parameter support
-    context(uiScope: UIScope)
-    fun column(id: String? = null, init: ColumnBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Column")
-        val builder = ColumnBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun row(id: String? = null, init: RowBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Row")
-        val builder = RowBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun box(id: String? = null, init: BoxBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Box")
-        val builder = BoxBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun text(id: String? = null, init: TextBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Text")
-        val builder = TextBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun button(id: String? = null, init: ButtonBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Button")
-        val builder = ButtonBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun spacer(id: String? = null, init: SpacerBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Spacer")
-        val builder = SpacerBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun divider(id: String? = null, init: DividerBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Divider")
-        val builder = DividerBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun asyncImage(id: String? = null, init: AsyncImageBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("AsyncImage")
-        val builder = AsyncImageBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
-
-    context(uiScope: UIScope)
-    fun card(id: String? = null, init: CardBuilder.() -> Unit) {
-        val actualId = id ?: uiScope.componentContext.generateId("Card")
-        val builder = CardBuilder(actualId)
-        uiScope.componentContext.pushId(actualId)
-        try {
-            builder.apply(init)
-            children.add(builder.build())
-        } finally {
-            uiScope.componentContext.popId()
-        }
-    }
+    override val children: MutableList<Token> = mutableListOf()
+) : TokenBuilder<LazyRowToken>, ContainerSupport, BaseBuilderProperties, PaddingSupport, MarginSupport, BackgroundSupport {
 
     override fun build(): LazyRowToken {
         val actualId = id ?: error("ID must be provided for LazyRowToken")
@@ -1012,33 +426,17 @@ class LazyRowBuilder(
 }
 
 class TextBuilder(
-    var id: String? = null,
-    var version: Int = 1,
-    var a11y: A11y? = null,
-    var text: TemplateString = TemplateString(""),
+    override var id: String? = null,
+    override var version: Int = 1,
+    override var a11y: A11y? = null,
+    override var text: TemplateString = TemplateString(""),
     var style: TextStyle = TextStyle.BodyMedium,
-    var color: ColorValue? = null,
+    override var color: ColorValue? = null,
     var maxLines: Int? = null,
     var overflow: TextOverflowValue = TextOverflowValue.Clip,
     var textAlign: TextAlignValue? = null,
-    var margin: Margin? = null
-) : TokenBuilder<TextToken> {
-
-    fun text(value: String) {
-        text = TemplateString(value)
-    }
-
-    fun margin(init: MarginBuilder.() -> Unit) {
-        margin = MarginBuilder().apply(init).build()
-    }
-
-    fun a11y(init: A11yBuilder.() -> Unit) {
-        a11y = A11yBuilder().apply(init).build()
-    }
-
-    fun color(init: ColorBuilder.() -> Unit) {
-        color = ColorBuilder().apply(init).build()
-    }
+    override var margin: Margin? = null
+) : TokenBuilder<TextToken>, BaseBuilderProperties, MarginSupport, TextSupport, ColorSupport {
 
     override fun build(): TextToken {
         val actualId = id ?: error("ID must be provided for TextToken")
@@ -1059,31 +457,15 @@ class TextBuilder(
 }
 
 class ButtonBuilder(
-    var id: String? = null,
-    var version: Int = 1,
-    var a11y: A11y? = null,
-    var text: TemplateString = TemplateString(""),
+    override var id: String? = null,
+    override var version: Int = 1,
+    override var a11y: A11y? = null,
+    override var text: TemplateString = TemplateString(""),
     var style: ButtonStyle = ButtonStyle.Filled,
     var enabled: Boolean = true,
-    var margin: Margin? = null,
-    var onClick: Action = Action(ActionType.Custom)
-) : TokenBuilder<ButtonToken> {
-
-    fun text(value: String) {
-        text = TemplateString(value)
-    }
-
-    fun margin(init: MarginBuilder.() -> Unit) {
-        margin = MarginBuilder().apply(init).build()
-    }
-
-    fun a11y(init: A11yBuilder.() -> Unit) {
-        a11y = A11yBuilder().apply(init).build()
-    }
-
-    fun onClick(init: ActionBuilder.() -> Unit) {
-        onClick = ActionBuilder().apply(init).build()
-    }
+    override var margin: Margin? = null,
+    override var onClick: Action? = Action(ActionType.Custom)
+) : TokenBuilder<ButtonToken>, BaseBuilderProperties, MarginSupport, TextSupport, ClickSupport {
 
     override fun build(): ButtonToken {
         val actualId = id ?: error("ID must be provided for ButtonToken")
@@ -1095,23 +477,19 @@ class ButtonBuilder(
             style = style,
             enabled = enabled,
             margin = margin,
-            onClick = onClick
+            onClick = onClick ?: Action(ActionType.Custom)
         )
         return result
     }
 }
 
 class SpacerBuilder(
-    var id: String? = null,
-    var version: Int = 1,
-    var a11y: A11y? = null,
+    override var id: String? = null,
+    override var version: Int = 1,
+    override var a11y: A11y? = null,
     var width: Int? = null,
     var height: Int? = null
-) : TokenBuilder<SpacerToken> {
-
-    fun a11y(init: A11yBuilder.() -> Unit) {
-        a11y = A11yBuilder().apply(init).build()
-    }
+) : TokenBuilder<SpacerToken>, BaseBuilderProperties {
 
     override fun build(): SpacerToken {
         val actualId = id ?: error("ID must be provided for SpacerToken")
@@ -1127,25 +505,13 @@ class SpacerBuilder(
 }
 
 class DividerBuilder(
-    var id: String? = null,
-    var version: Int = 1,
-    var a11y: A11y? = null,
+    override var id: String? = null,
+    override var version: Int = 1,
+    override var a11y: A11y? = null,
     var thickness: Int = 1,
-    var color: ColorValue? = null,
-    var margin: Margin? = null
-) : TokenBuilder<DividerToken> {
-
-    fun margin(init: MarginBuilder.() -> Unit) {
-        margin = MarginBuilder().apply(init).build()
-    }
-
-    fun a11y(init: A11yBuilder.() -> Unit) {
-        a11y = A11yBuilder().apply(init).build()
-    }
-
-    fun color(init: ColorBuilder.() -> Unit) {
-        color = ColorBuilder().apply(init).build()
-    }
+    override var color: ColorValue? = null,
+    override var margin: Margin? = null
+) : TokenBuilder<DividerToken>, BaseBuilderProperties, MarginSupport, ColorSupport {
 
     override fun build(): DividerToken {
         val actualId = id ?: error("ID must be provided for DividerToken")
@@ -1162,24 +528,16 @@ class DividerBuilder(
 }
 
 class SliderBuilder(
-    var id: String? = null,
-    var version: Int = 1,
-    var a11y: A11y? = null,
+    override var id: String? = null,
+    override var version: Int = 1,
+    override var a11y: A11y? = null,
     var initialValue: Float = 0f,
     var valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     var steps: Int? = null,
     var enabled: Boolean = true,
-    var margin: Margin? = null,
+    override var margin: Margin? = null,
     var onChange: Action? = null
-) : TokenBuilder<SliderToken> {
-
-    fun margin(init: MarginBuilder.() -> Unit) {
-        margin = MarginBuilder().apply(init).build()
-    }
-
-    fun a11y(init: A11yBuilder.() -> Unit) {
-        a11y = A11yBuilder().apply(init).build()
-    }
+) : TokenBuilder<SliderToken>, BaseBuilderProperties, MarginSupport {
 
     fun onChange(init: ActionBuilder.() -> Unit) {
         onChange = ActionBuilder().apply(init).build()
@@ -1202,32 +560,20 @@ class SliderBuilder(
 }
 
 class AsyncImageBuilder(
-    var id: String? = null,
-    var version: Int = 1,
-    var a11y: A11y? = null,
-    var url: TemplateString = TemplateString(""),
+    override var id: String? = null,
+    override var version: Int = 1,
+    override var a11y: A11y? = null,
+    override var url: TemplateString = TemplateString(""),
     var widthDp: Int? = null,
     var heightDp: Int? = null,
     var layoutWeight: Float? = null,
     var clip: ClipShape? = null,
     var contentScale: ContentScale = ContentScale.FillWidth,
-    var margin: Margin? = null,
+    override var margin: Margin? = null,
     var errorFallback: ErrorFallback? = null,
     var loadingPlaceholder: LoadingPlaceholder? = null,
-    var onClick: Action? = null
-) : TokenBuilder<AsyncImageToken> {
-
-    fun url(value: String) {
-        url = TemplateString(value)
-    }
-
-    fun margin(init: MarginBuilder.() -> Unit) {
-        margin = MarginBuilder().apply(init).build()
-    }
-
-    fun a11y(init: A11yBuilder.() -> Unit) {
-        a11y = A11yBuilder().apply(init).build()
-    }
+    override var onClick: Action? = null
+) : TokenBuilder<AsyncImageToken>, BaseBuilderProperties, MarginSupport, UrlSupport, ClickSupport {
 
     fun errorFallback(init: ErrorFallbackBuilder.() -> Unit) {
         errorFallback = ErrorFallbackBuilder().apply(init).build()
@@ -1235,10 +581,6 @@ class AsyncImageBuilder(
 
     fun loadingPlaceholder(init: LoadingPlaceholderBuilder.() -> Unit) {
         loadingPlaceholder = LoadingPlaceholderBuilder().apply(init).build()
-    }
-
-    fun onClick(init: ActionBuilder.() -> Unit) {
-        onClick = ActionBuilder().apply(init).build()
     }
 
     override fun build(): AsyncImageToken {
@@ -1405,11 +747,16 @@ class LoadingPlaceholderBuilder {
     )
 }
 
+// Helper function to derive component name from builder class
+inline fun <reified T> getComponentName(): String {
+    return T::class.simpleName?.removeSuffix("Builder") ?: "Unknown"
+}
+
 // Top-level DSL functions with Kotlin 2.2.0 context parameters
 // These functions use context parameters to automatically propagate UIScope
 context(uiScope: UIScope)
 fun Column(id: String? = null, content: ColumnBuilder.() -> Unit): ColumnToken {
-    val actualId = id ?: uiScope.componentContext.generateId("Column")
+    val actualId = id ?: uiScope.componentContext.generateId(getComponentName<ColumnBuilder>())
     val builder = ColumnBuilder(actualId)
     uiScope.componentContext.pushId(actualId)
     try {
@@ -1422,7 +769,7 @@ fun Column(id: String? = null, content: ColumnBuilder.() -> Unit): ColumnToken {
 
 context(uiScope: UIScope)
 fun Row(id: String? = null, content: RowBuilder.() -> Unit): RowToken {
-    val actualId = id ?: uiScope.componentContext.generateId("Row")
+    val actualId = id ?: uiScope.componentContext.generateId(getComponentName<RowBuilder>())
     val builder = RowBuilder(actualId)
     uiScope.componentContext.pushId(actualId)
     try {
@@ -1435,7 +782,7 @@ fun Row(id: String? = null, content: RowBuilder.() -> Unit): RowToken {
 
 context(uiScope: UIScope)
 fun Box(id: String? = null, content: BoxBuilder.() -> Unit): BoxToken {
-    val actualId = id ?: uiScope.componentContext.generateId("Box")
+    val actualId = id ?: uiScope.componentContext.generateId(getComponentName<BoxBuilder>())
     val builder = BoxBuilder(actualId)
     uiScope.componentContext.pushId(actualId)
     try {
@@ -1448,7 +795,7 @@ fun Box(id: String? = null, content: BoxBuilder.() -> Unit): BoxToken {
 
 context(uiScope: UIScope)
 fun Card(id: String? = null, content: CardBuilder.() -> Unit): CardToken {
-    val actualId = id ?: uiScope.componentContext.generateId("Card")
+    val actualId = id ?: uiScope.componentContext.generateId(getComponentName<CardBuilder>())
     val builder = CardBuilder(actualId)
     uiScope.componentContext.pushId(actualId)
     try {
@@ -1461,7 +808,7 @@ fun Card(id: String? = null, content: CardBuilder.() -> Unit): CardToken {
 
 context(uiScope: UIScope)
 fun Text(id: String? = null, content: TextBuilder.() -> Unit): TextToken {
-    val actualId = id ?: uiScope.componentContext.generateId("Text")
+    val actualId = id ?: uiScope.componentContext.generateId(getComponentName<TextBuilder>())
     val builder = TextBuilder(actualId)
     uiScope.componentContext.pushId(actualId)
     try {
@@ -1474,7 +821,7 @@ fun Text(id: String? = null, content: TextBuilder.() -> Unit): TextToken {
 
 context(uiScope: UIScope)
 fun Button(id: String? = null, content: ButtonBuilder.() -> Unit): ButtonToken {
-    val actualId = id ?: uiScope.componentContext.generateId("Button")
+    val actualId = id ?: uiScope.componentContext.generateId(getComponentName<ButtonBuilder>())
     val builder = ButtonBuilder(actualId)
     uiScope.componentContext.pushId(actualId)
     try {
@@ -1487,7 +834,7 @@ fun Button(id: String? = null, content: ButtonBuilder.() -> Unit): ButtonToken {
 
 context(uiScope: UIScope)
 fun Spacer(id: String? = null, content: SpacerBuilder.() -> Unit): SpacerToken {
-    val actualId = id ?: uiScope.componentContext.generateId("Spacer")
+    val actualId = id ?: uiScope.componentContext.generateId(getComponentName<SpacerBuilder>())
     val builder = SpacerBuilder(actualId)
     uiScope.componentContext.pushId(actualId)
     try {
@@ -1500,7 +847,7 @@ fun Spacer(id: String? = null, content: SpacerBuilder.() -> Unit): SpacerToken {
 
 context(uiScope: UIScope)
 fun Divider(id: String? = null, content: DividerBuilder.() -> Unit): DividerToken {
-    val actualId = id ?: uiScope.componentContext.generateId("Divider")
+    val actualId = id ?: uiScope.componentContext.generateId(getComponentName<DividerBuilder>())
     val builder = DividerBuilder(actualId)
     uiScope.componentContext.pushId(actualId)
     try {
@@ -1513,7 +860,7 @@ fun Divider(id: String? = null, content: DividerBuilder.() -> Unit): DividerToke
 
 context(uiScope: UIScope)
 fun Slider(id: String? = null, content: SliderBuilder.() -> Unit): SliderToken {
-    val actualId = id ?: uiScope.componentContext.generateId("Slider")
+    val actualId = id ?: uiScope.componentContext.generateId(getComponentName<SliderBuilder>())
     val builder = SliderBuilder(actualId)
     uiScope.componentContext.pushId(actualId)
     try {
@@ -1526,7 +873,7 @@ fun Slider(id: String? = null, content: SliderBuilder.() -> Unit): SliderToken {
 
 context(uiScope: UIScope)
 fun AsyncImage(id: String? = null, content: AsyncImageBuilder.() -> Unit): AsyncImageToken {
-    val actualId = id ?: uiScope.componentContext.generateId("AsyncImage")
+    val actualId = id ?: uiScope.componentContext.generateId(getComponentName<AsyncImageBuilder>())
     val builder = AsyncImageBuilder(actualId)
     uiScope.componentContext.pushId(actualId)
     try {
@@ -1539,7 +886,7 @@ fun AsyncImage(id: String? = null, content: AsyncImageBuilder.() -> Unit): Async
 
 context(uiScope: UIScope)
 fun LazyColumn(id: String? = null, content: LazyColumnBuilder.() -> Unit): LazyColumnToken {
-    val actualId = id ?: uiScope.componentContext.generateId("LazyColumn")
+    val actualId = id ?: uiScope.componentContext.generateId(getComponentName<LazyColumnBuilder>())
     val builder = LazyColumnBuilder(actualId)
     uiScope.componentContext.pushId(actualId)
     try {
@@ -1552,7 +899,7 @@ fun LazyColumn(id: String? = null, content: LazyColumnBuilder.() -> Unit): LazyC
 
 context(uiScope: UIScope)
 fun LazyRow(id: String? = null, content: LazyRowBuilder.() -> Unit): LazyRowToken {
-    val actualId = id ?: uiScope.componentContext.generateId("LazyRow")
+    val actualId = id ?: uiScope.componentContext.generateId(getComponentName<LazyRowBuilder>())
     val builder = LazyRowBuilder(actualId)
     uiScope.componentContext.pushId(actualId)
     try {

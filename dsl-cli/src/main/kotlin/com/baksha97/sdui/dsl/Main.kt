@@ -1,10 +1,30 @@
 package com.baksha97.sdui.dsl
 
+// Import extension functions
+import com.baksha97.sdui.shared.models.ActionType
+import com.baksha97.sdui.shared.models.ButtonStyle
+import com.baksha97.sdui.shared.models.Card
+import com.baksha97.sdui.shared.models.Column
+import com.baksha97.sdui.shared.models.LazyColumn
+import com.baksha97.sdui.shared.models.Row
+import com.baksha97.sdui.shared.models.TextStyle
+import com.baksha97.sdui.shared.models.Token
+import com.baksha97.sdui.shared.models.asyncImage
+import com.baksha97.sdui.shared.models.button
+import com.baksha97.sdui.shared.models.card
+import com.baksha97.sdui.shared.models.column
+import com.baksha97.sdui.shared.models.margin
+import com.baksha97.sdui.shared.models.onClick
+import com.baksha97.sdui.shared.models.padding
+import com.baksha97.sdui.shared.models.row
+import com.baksha97.sdui.shared.models.slider
+import com.baksha97.sdui.shared.models.text
+import com.baksha97.sdui.shared.models.textContent
+import com.baksha97.sdui.shared.models.ui
+import com.baksha97.sdui.shared.models.urlSource
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.encodeToString
 import java.io.File
-import com.baksha97.sdui.shared.models.*
 
 /**
  * Main entry point for the DSL CLI tool.
@@ -61,7 +81,7 @@ private fun handleGenerate(args: Array<String>) {
  * Generates JSON for the specified component type.
  */
 private fun generateJson(componentType: String): String {
-    val json = Json { 
+    val json = Json {
         prettyPrint = true
         encodeDefaults = true
         ignoreUnknownKeys = true
@@ -85,51 +105,86 @@ private fun generateJson(componentType: String): String {
 /**
  * Generates a profile card component.
  */
-private fun generateProfileCard(): Token {
-    return profileCard(
-        avatarUrl = "https://picsum.photos/56",
-        username = "John Doe",
-        followers = 1234
-    )
+private fun generateProfileCard(): Token = ui {
+    Card("profile_card") {
+        padding {
+            all = 16
+        }
+
+        column {
+            asyncImage("avatar_image") {
+                urlSource = "https://picsum.photos/56"
+                widthDp = 56
+                heightDp = 56
+            }
+
+            text("name_text") {
+                textContent = "John Doe"
+                style = TextStyle.HeadlineMedium
+            }
+
+            text("followers_text") {
+                textContent = "1234 followers"
+                style = TextStyle.BodyMedium
+            }
+        }
+    }
 }
 
 /**
  * Generates an article card component.
  */
-private fun generateArticleCard(): Token {
-    return articleCard(
-        thumbUrl = "https://picsum.photos/400/250",
-        headline = "Server-driven UI cuts release time"
-    )
-}
-
-/**
- * Generates a composed component with multiple cards in a row.
- * This demonstrates the new add() function for composing tokens.
- */
-private fun generateComposedCards(): Token {
-    return row("composed_cards") {
+private fun generateArticleCard(): Token = ui {
+    Card("article_card") {
         padding {
             all = 16
         }
 
-        // Add existing tokens directly to the row
-        add(
-            generateProfileCard(),
-            generateArticleCard()
-        )
+        column("article_column") {
+            asyncImage("article_image") {
+                urlSource = "https://picsum.photos/400/250"
+                widthDp = 400
+                heightDp = 250
+            }
+
+            text("article_title") {
+                textContent = "Server-driven UI cuts release time"
+                style = TextStyle.HeadlineMedium
+                margin {
+                    top = 8
+                }
+            }
+        }
     }
 }
+
+/**
+ * Generates a composed component with multiple cards in a row.
+ * This demonstrates composing tokens.
+ */
+private fun generateComposedCards(): Token = ui {
+        Row("composed_cards") {
+            padding {
+                all = 16
+            }
+
+            // Add existing tokens directly to the row
+            val profileCard = generateProfileCard()
+            val articleCard = generateArticleCard()
+            children.add(profileCard)
+            children.add(articleCard)
+        }
+    }
 
 /**
  * Generates a dashboard component that demonstrates more complex composition.
  * This shows how to compose multiple components into a single UI.
  */
-private fun generateDashboard(): Token {
-    return column("dashboard") {
+private fun generateDashboard(): Token = ui {
+    Column("dashboard") {
         // Header section
-        text {
-            text("Dashboard")
+        text("dashboard_header") {
+            textContent = "Dashboard"
             style = TextStyle.HeadlineLarge
             margin {
                 all = 16
@@ -141,59 +196,154 @@ private fun generateDashboard(): Token {
             padding {
                 horizontal = 16
             }
-
-            add(
-                generateEnhancedCard(),
-                generateSlider()
-            )
+            val enhancedCard = generateEnhancedCard()
+            val sliderCard = generateSlider()
+            children.add(enhancedCard)
+            children.add(sliderCard)
         }
 
-        // Form section - add an existing form
-        add(generateForm())
-
-        // List section
-        add(generateLazyList())
+        val formCard = generateForm()
+        val lazyList = generateLazyList()
+        children.add(formCard)
+        children.add(lazyList)
     }
 }
 
 /**
  * Generates an enhanced card component.
  */
-private fun generateEnhancedCard(): Token {
-    return enhancedCard(
-        title = "Enhanced Card Example",
-        description = "This card demonstrates the new CardToken with styling and a button.",
-        buttonText = "Learn More"
-    )
+private fun generateEnhancedCard(): Token = ui {
+    Card("enhanced_card") {
+        padding {
+            all = 16
+        }
+
+        column("enhanced_column") {
+            text("enhanced_title") {
+                textContent = "Enhanced Card Example"
+                style = TextStyle.HeadlineMedium
+            }
+
+            text("enhanced_description") {
+                textContent = "This card demonstrates the new CardToken with styling and a button."
+                style = TextStyle.BodyMedium
+                margin {
+                    top = 8
+                }
+            }
+
+            button("enhanced_button") {
+                textContent = "Learn More"
+                style = ButtonStyle.Filled
+                margin {
+                    top = 16
+                }
+                onClick {
+                    type = ActionType.Navigate
+                    data("url" to "https://example.com")
+                }
+            }
+        }
+    }
 }
 
 /**
  * Generates a form component.
  */
-private fun generateForm(): Token {
-    return formExample(
-        formTitle = "Contact Form",
-        formDescription = "Fill out this form to get in touch with us."
-    )
+private fun generateForm(): Token = ui {
+    Card("form_card") {
+        padding {
+            all = 16
+        }
+
+        column("form_column") {
+            text("form_title") {
+                textContent = "Contact Form"
+                style = TextStyle.HeadlineMedium
+            }
+
+            text("form_description") {
+                textContent = "Fill out this form to get in touch with us."
+                style = TextStyle.BodyMedium
+                margin {
+                    top = 8
+                }
+            }
+
+            button("form_submit") {
+                textContent = "Submit"
+                style = ButtonStyle.Filled
+                margin {
+                    top = 16
+                }
+                onClick {
+                    type = ActionType.Custom
+                    data("action" to "submit_form")
+                }
+            }
+        }
+    }
 }
 
 /**
  * Generates a slider component.
  */
-private fun generateSlider(): Token {
-    return sliderExample(
-        sliderTitle = "Local State Management",
-        sliderDescription = "This slider demonstrates local state management."
-    )
+private fun generateSlider(): Token = ui {
+    Card("slider_card") {
+        padding {
+            all = 16
+        }
+
+        column("slider_column") {
+            text("slider_title") {
+                textContent = "Local State Management"
+                style = TextStyle.HeadlineMedium
+            }
+
+            text("slider_description") {
+                textContent = "This slider demonstrates local state management."
+                style = TextStyle.BodyMedium
+                margin {
+                    top = 8
+                }
+            }
+
+            slider("demo_slider") {
+                initialValue = 0.5f
+                margin {
+                    top = 16
+                }
+            }
+        }
+    }
 }
 
 /**
  * Generates a lazy list component.
  */
-private fun generateLazyList(): Token {
-    return lazyListExample(
-        itemCount = 5
-    )
+private fun generateLazyList(): Token = ui {
+    LazyColumn("lazy_list") {
+        padding {
+            all = 16
+        }
+
+        // Add some sample items
+        for (i in 1..5) {
+            card("list_item_$i") {
+                margin {
+                    bottom = 8
+                }
+                padding {
+                    all = 12
+                }
+
+                text("item_text_$i") {
+                    textContent = "List Item $i"
+                    style = TextStyle.BodyMedium
+                }
+            }
+        }
+    }
 }
 
 /**
@@ -212,7 +362,7 @@ private fun handleSchema(args: Array<String>) {
     try {
         val schemaGenerator = SchemaGenerator()
         val schema = schemaGenerator.generateTokenSchema()
-        val json = Json { 
+        val json = Json {
             prettyPrint = true
             encodeDefaults = true
             ignoreUnknownKeys = true
@@ -238,41 +388,11 @@ private fun handleRender(args: Array<String>) {
 
     val inputFile = args[0]
     val outputFile = args[1]
-    println("Rendering $inputFile to $outputFile...")
 
-    try {
-        // Read the input file
-        val jsonString = File(inputFile).readText()
-
-        // Parse the JSON
-        val json = Json { 
-            prettyPrint = true
-            encodeDefaults = true
-            ignoreUnknownKeys = true
-        }
-        val jsonElement = json.parseToJsonElement(jsonString)
-        val inputJsonObject = jsonElement.jsonObject
-
-        // Generate the schema
-        val schemaGenerator = SchemaGenerator()
-        val schema = schemaGenerator.generateTokenSchema()
-
-        // Render the token
-        val renderer = SchemaRenderer()
-        val token = renderer.renderToken(inputJsonObject, schema)
-
-        if (token != null) {
-            // Serialize the token back to JSON
-            val outputJsonString = json.encodeToString(TokenSerializer, token)
-            File(outputFile).writeText(outputJsonString)
-            println("Successfully rendered token to $outputFile")
-        } else {
-            println("Error: Failed to render token from $inputFile")
-        }
-    } catch (e: Exception) {
-        println("Error rendering token: ${e.message}")
-        e.printStackTrace()
-    }
+    println("Error: The 'render' command is temporarily disabled.")
+    println("The DSL is still being iterated on. When finalized, the render functionality will be reimplemented.")
+    println("Input file: $inputFile")
+    println("Output file: $outputFile")
 }
 
 /**
@@ -299,7 +419,7 @@ private fun handleMigrate(args: Array<String>) {
     try {
         // Read the input file
         val jsonString = File(inputFile).readText()
-        val json = Json { 
+        val json = Json {
             prettyPrint = true
             encodeDefaults = true
             ignoreUnknownKeys = true
