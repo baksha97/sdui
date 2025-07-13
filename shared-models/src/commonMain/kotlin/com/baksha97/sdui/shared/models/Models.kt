@@ -1,6 +1,7 @@
-package com.baksha97.sdui.dsl
+package com.baksha97.sdui.shared.models
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerialName
 
 /**
  * Core token hierarchy for the DSL.
@@ -113,7 +114,7 @@ data class CardToken(
     val padding: Padding? = null,
     val margin: Margin? = null,
     val elevation: Int = 1,
-    val shape: CardShape = CardShape.ROUNDED8,
+    val shape: CardShape = CardShape.Rounded8,
     val background: Background? = null,
     override val onClick: Action? = null,
     override val children: List<Token>
@@ -176,6 +177,16 @@ data class DividerToken(
 
 /**
  * A token representing a slider component.
+ * 
+ * @param id Unique identifier for the token
+ * @param version Version of the token
+ * @param a11y Accessibility properties
+ * @param initialValue Initial value of the slider (between 0f and 1f)
+ * @param valueRange Range of values for the slider (default is 0f to 1f)
+ * @param steps Number of discrete steps (null for continuous slider)
+ * @param enabled Whether the slider is enabled
+ * @param margin Margin around the slider
+ * @param onChange Action to trigger when the slider value changes
  */
 @Serializable
 data class SliderToken(
@@ -183,8 +194,7 @@ data class SliderToken(
     override val version: Int,
     override val a11y: A11y? = null,
     val initialValue: Float = 0f,
-    val rangeStart: Float = 0f,
-    val rangeEnd: Float = 1f,
+    val valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     val steps: Int? = null,
     val enabled: Boolean = true,
     val margin: Margin? = null,
@@ -219,17 +229,76 @@ data class AsyncImageToken(
 data class A11y(
     val role: Role,
     val label: TemplateString,
-    val liveRegion: LiveRegion = LiveRegion.OFF,
+    val liveRegion: LiveRegion = LiveRegion.Off,
     val isEnabled: Boolean = true,
     val isFocusable: Boolean = true
 )
 
-enum class Role { 
-    BANNER, IMAGE, BUTTON, CHECKBOX, HEADER, LINK, SWITCH, 
-    TEXT_FIELD, SLIDER, PROGRESS_BAR, RADIO_BUTTON, NONE 
+@Serializable
+sealed class Role {
+    @Serializable
+    @SerialName("Banner")
+    data object Banner : Role()
+
+    @Serializable
+    @SerialName("Image")
+    data object Image : Role()
+
+    @Serializable
+    @SerialName("Button")
+    data object Button : Role()
+
+    @Serializable
+    @SerialName("Checkbox")
+    data object Checkbox : Role()
+
+    @Serializable
+    @SerialName("Header")
+    data object Header : Role()
+
+    @Serializable
+    @SerialName("Link")
+    data object Link : Role()
+
+    @Serializable
+    @SerialName("Switch")
+    data object Switch : Role()
+
+    @Serializable
+    @SerialName("TextField")
+    data object TextField : Role()
+
+    @Serializable
+    @SerialName("Slider")
+    data object Slider : Role()
+
+    @Serializable
+    @SerialName("ProgressBar")
+    data object ProgressBar : Role()
+
+    @Serializable
+    @SerialName("RadioButton")
+    data object RadioButton : Role()
+
+    @Serializable
+    @SerialName("None")
+    data object None : Role()
 }
 
-enum class LiveRegion { OFF, POLITE, ASSERTIVE }
+@Serializable
+sealed class LiveRegion {
+    @Serializable
+    @SerialName("Off")
+    data object Off : LiveRegion()
+
+    @Serializable
+    @SerialName("Polite")
+    data object Polite : LiveRegion()
+
+    @Serializable
+    @SerialName("Assertive")
+    data object Assertive : LiveRegion()
+}
 
 @Serializable 
 data class Padding(
@@ -267,31 +336,244 @@ data class Action(
     val data: Map<String, String> = emptyMap()
 )
 
-enum class ActionType {
-    NAVIGATE, DEEP_LINK, OPEN_URL, CUSTOM
+@Serializable
+sealed class ActionType {
+    @Serializable
+    @SerialName("Navigate")
+    data object Navigate : ActionType()
+
+    @Serializable
+    @SerialName("DeepLink")
+    data object DeepLink : ActionType()
+
+    @Serializable
+    @SerialName("OpenUrl")
+    data object OpenUrl : ActionType()
+
+    @Serializable
+    @SerialName("Custom")
+    data object Custom : ActionType()
 }
 
-enum class TextStyle { 
-    DisplayLarge, DisplayMedium, DisplaySmall,
-    HeadlineLarge, HeadlineMedium, HeadlineSmall,
-    TitleLarge, TitleMedium, TitleSmall,
-    BodyLarge, BodyMedium, BodySmall,
-    LabelLarge, LabelMedium, LabelSmall
+@Serializable
+sealed class TextStyle {
+    @Serializable
+    @SerialName("DisplayLarge")
+    data object DisplayLarge : TextStyle()
+
+    @Serializable
+    @SerialName("DisplayMedium")
+    data object DisplayMedium : TextStyle()
+
+    @Serializable
+    @SerialName("DisplaySmall")
+    data object DisplaySmall : TextStyle()
+
+    @Serializable
+    @SerialName("HeadlineLarge")
+    data object HeadlineLarge : TextStyle()
+
+    @Serializable
+    @SerialName("HeadlineMedium")
+    data object HeadlineMedium : TextStyle()
+
+    @Serializable
+    @SerialName("HeadlineSmall")
+    data object HeadlineSmall : TextStyle()
+
+    @Serializable
+    @SerialName("TitleLarge")
+    data object TitleLarge : TextStyle()
+
+    @Serializable
+    @SerialName("TitleMedium")
+    data object TitleMedium : TextStyle()
+
+    @Serializable
+    @SerialName("TitleSmall")
+    data object TitleSmall : TextStyle()
+
+    @Serializable
+    @SerialName("BodyLarge")
+    data object BodyLarge : TextStyle()
+
+    @Serializable
+    @SerialName("BodyMedium")
+    data object BodyMedium : TextStyle()
+
+    @Serializable
+    @SerialName("BodySmall")
+    data object BodySmall : TextStyle()
+
+    @Serializable
+    @SerialName("LabelLarge")
+    data object LabelLarge : TextStyle()
+
+    @Serializable
+    @SerialName("LabelMedium")
+    data object LabelMedium : TextStyle()
+
+    @Serializable
+    @SerialName("LabelSmall")
+    data object LabelSmall : TextStyle()
 }
 
-enum class ContentScale { FillWidth, FillHeight, Crop, Inside, Fit, FillBounds }
-enum class ClipShape { CIRCLE, ROUNDED4, ROUNDED8, ROUNDED12, ROUNDED16 }
-enum class CardShape { ROUNDED4, ROUNDED8, ROUNDED12, ROUNDED16 }
-enum class ButtonStyle { Filled, Outlined, Text, Elevated, FilledTonal }
+@Serializable
+sealed class ContentScale {
+    @Serializable
+    @SerialName("FillWidth")
+    data object FillWidth : ContentScale()
 
-// Replacing Compose-specific Alignment with our own enums
-enum class HorizontalAlignment { Start, Center, End }
-enum class VerticalAlignment { Top, CenterVertically, Bottom }
+    @Serializable
+    @SerialName("FillHeight")
+    data object FillHeight : ContentScale()
 
-enum class BoxAlignment { 
-    TopStart, TopCenter, TopEnd,
-    CenterStart, Center, CenterEnd,
-    BottomStart, BottomCenter, BottomEnd
+    @Serializable
+    @SerialName("Crop")
+    data object Crop : ContentScale()
+
+    @Serializable
+    @SerialName("Inside")
+    data object Inside : ContentScale()
+
+    @Serializable
+    @SerialName("Fit")
+    data object Fit : ContentScale()
+
+    @Serializable
+    @SerialName("FillBounds")
+    data object FillBounds : ContentScale()
+}
+@Serializable
+sealed class ClipShape {
+    @Serializable
+    @SerialName("Circle")
+    data object Circle : ClipShape()
+
+    @Serializable
+    @SerialName("Rounded4")
+    data object Rounded4 : ClipShape()
+
+    @Serializable
+    @SerialName("Rounded8")
+    data object Rounded8 : ClipShape()
+
+    @Serializable
+    @SerialName("Rounded12")
+    data object Rounded12 : ClipShape()
+
+    @Serializable
+    @SerialName("Rounded16")
+    data object Rounded16 : ClipShape()
+}
+@Serializable
+sealed class CardShape {
+    @Serializable
+    @SerialName("Rounded4")
+    data object Rounded4 : CardShape()
+
+    @Serializable
+    @SerialName("Rounded8")
+    data object Rounded8 : CardShape()
+
+    @Serializable
+    @SerialName("Rounded12")
+    data object Rounded12 : CardShape()
+
+    @Serializable
+    @SerialName("Rounded16")
+    data object Rounded16 : CardShape()
+}
+@Serializable
+sealed class ButtonStyle {
+    @Serializable
+    @SerialName("Filled")
+    data object Filled : ButtonStyle()
+
+    @Serializable
+    @SerialName("Outlined")
+    data object Outlined : ButtonStyle()
+
+    @Serializable
+    @SerialName("Text")
+    data object Text : ButtonStyle()
+
+    @Serializable
+    @SerialName("Elevated")
+    data object Elevated : ButtonStyle()
+
+    @Serializable
+    @SerialName("FilledTonal")
+    data object FilledTonal : ButtonStyle()
+}
+
+// Alignment enums
+@Serializable
+sealed class HorizontalAlignment {
+    @Serializable
+    @SerialName("Start")
+    data object Start : HorizontalAlignment()
+
+    @Serializable
+    @SerialName("Center")
+    data object Center : HorizontalAlignment()
+
+    @Serializable
+    @SerialName("End")
+    data object End : HorizontalAlignment()
+}
+@Serializable
+sealed class VerticalAlignment {
+    @Serializable
+    @SerialName("Top")
+    data object Top : VerticalAlignment()
+
+    @Serializable
+    @SerialName("CenterVertically")
+    data object CenterVertically : VerticalAlignment()
+
+    @Serializable
+    @SerialName("Bottom")
+    data object Bottom : VerticalAlignment()
+}
+
+@Serializable
+sealed class BoxAlignment {
+    @Serializable
+    @SerialName("TopStart")
+    data object TopStart : BoxAlignment()
+
+    @Serializable
+    @SerialName("TopCenter")
+    data object TopCenter : BoxAlignment()
+
+    @Serializable
+    @SerialName("TopEnd")
+    data object TopEnd : BoxAlignment()
+
+    @Serializable
+    @SerialName("CenterStart")
+    data object CenterStart : BoxAlignment()
+
+    @Serializable
+    @SerialName("Center")
+    data object Center : BoxAlignment()
+
+    @Serializable
+    @SerialName("CenterEnd")
+    data object CenterEnd : BoxAlignment()
+
+    @Serializable
+    @SerialName("BottomStart")
+    data object BottomStart : BoxAlignment()
+
+    @Serializable
+    @SerialName("BottomCenter")
+    data object BottomCenter : BoxAlignment()
+
+    @Serializable
+    @SerialName("BottomEnd")
+    data object BottomEnd : BoxAlignment()
 }
 
 @Serializable
@@ -320,19 +602,57 @@ data class ColorValue(
 /**
  * Serializable wrapper for TextAlign
  */
-enum class TextAlignValue { Start, Center, End, Justify, Left, Right }
+@Serializable
+sealed class TextAlignValue {
+    @Serializable
+    @SerialName("Start")
+    data object Start : TextAlignValue()
+
+    @Serializable
+    @SerialName("Center")
+    data object Center : TextAlignValue()
+
+    @Serializable
+    @SerialName("End")
+    data object End : TextAlignValue()
+
+    @Serializable
+    @SerialName("Justify")
+    data object Justify : TextAlignValue()
+
+    @Serializable
+    @SerialName("Left")
+    data object Left : TextAlignValue()
+
+    @Serializable
+    @SerialName("Right")
+    data object Right : TextAlignValue()
+}
 
 /**
  * Serializable wrapper for TextOverflow
  */
-enum class TextOverflowValue { Clip, Ellipsis, Visible }
+@Serializable
+sealed class TextOverflowValue {
+    @Serializable
+    @SerialName("Clip")
+    data object Clip : TextOverflowValue()
+
+    @Serializable
+    @SerialName("Ellipsis")
+    data object Ellipsis : TextOverflowValue()
+
+    @Serializable
+    @SerialName("Visible")
+    data object Visible : TextOverflowValue()
+}
 
 /* Placeholder binding */
 @Serializable
 data class TemplateString(val raw: String) {
-    fun resolve(bindings: Map<String, String>): String =
+    fun resolve(bindings: Map<String, Any>): String =
         PLACEHOLDER_REGEX.replace(raw) { m ->
-            bindings[m.groupValues[1]] ?: m.value
+            bindings[m.groupValues[1]]?.toString() ?: m.value
         }
 
     companion object { 

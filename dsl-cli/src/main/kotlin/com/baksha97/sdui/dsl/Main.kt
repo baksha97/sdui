@@ -4,6 +4,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.encodeToString
 import java.io.File
+import com.baksha97.sdui.shared.models.*
 
 /**
  * Main entry point for the DSL CLI tool.
@@ -69,6 +70,8 @@ private fun generateJson(componentType: String): String {
     val token = when (componentType) {
         "profile-card" -> generateProfileCard()
         "article-card" -> generateArticleCard()
+        "composed-cards" -> generateComposedCards()
+        "dashboard" -> generateDashboard()
         "enhanced-card" -> generateEnhancedCard()
         "form" -> generateForm()
         "slider" -> generateSlider()
@@ -98,6 +101,59 @@ private fun generateArticleCard(): Token {
         thumbUrl = "https://picsum.photos/400/250",
         headline = "Server-driven UI cuts release time"
     )
+}
+
+/**
+ * Generates a composed component with multiple cards in a row.
+ * This demonstrates the new add() function for composing tokens.
+ */
+private fun generateComposedCards(): Token {
+    return row("composed_cards") {
+        padding {
+            all = 16
+        }
+
+        // Add existing tokens directly to the row
+        add(
+            generateProfileCard(),
+            generateArticleCard()
+        )
+    }
+}
+
+/**
+ * Generates a dashboard component that demonstrates more complex composition.
+ * This shows how to compose multiple components into a single UI.
+ */
+private fun generateDashboard(): Token {
+    return column("dashboard") {
+        // Header section
+        text {
+            text("Dashboard")
+            style = TextStyle.HeadlineLarge
+            margin {
+                all = 16
+            }
+        }
+
+        // Cards section - add a row containing two cards
+        row("dashboard_cards") {
+            padding {
+                horizontal = 16
+            }
+
+            add(
+                generateEnhancedCard(),
+                generateSlider()
+            )
+        }
+
+        // Form section - add an existing form
+        add(generateForm())
+
+        // List section
+        add(generateLazyList())
+    }
 }
 
 /**
@@ -284,6 +340,8 @@ private fun printUsage() {
     println("Component Types:")
     println("  profile-card    Generate a profile card component")
     println("  article-card    Generate an article card component")
+    println("  composed-cards  Generate a row with composed cards (demonstrates token composition)")
+    println("  dashboard       Generate a dashboard with multiple composed components")
     println("  enhanced-card   Generate an enhanced card component")
     println("  form            Generate a form component")
     println("  slider          Generate a slider component")

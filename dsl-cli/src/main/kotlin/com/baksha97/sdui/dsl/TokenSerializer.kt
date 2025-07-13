@@ -1,5 +1,6 @@
 package com.baksha97.sdui.dsl
 
+import com.baksha97.sdui.shared.models.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor

@@ -14,5 +14,6 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.logback)
     implementation("org.jetbrains.kotlin:kotlin-reflect:2.2.0")
+    implementation(project(":shared-models"))
     testImplementation(libs.kotlin.testJunit)
 }
